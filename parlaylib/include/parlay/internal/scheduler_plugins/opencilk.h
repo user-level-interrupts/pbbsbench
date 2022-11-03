@@ -14,11 +14,20 @@ namespace parlay {
 inline size_t num_workers() { return __cilkrts_get_nworkers(); }
 inline size_t worker_id() { return __cilkrts_get_worker_number(); }
 
+template <typename F>
+__attribute__((noinline)) void wrapperF(F f) {
+  f();
+}
+
+template <typename F>
+__attribute__((noinline)) void wrapperFi(F f, size_t i) {
+  f(i);
+}
+
 template <typename Lf, typename Rf>
-//inline void par_do(Lf left, Rf right, bool) {
-__attribute__((noinline)) void par_do(Lf left, Rf right, bool) {
-  cilk_spawn right();
-  left();
+inline void par_do(Lf left, Rf right, bool) {
+  cilk_spawn wrapperF(right);
+  wrapperF(left);
   cilk_sync;
 }
 
@@ -64,8 +73,8 @@ void parallel_for_real(size_t start, size_t end, F f,
 
   
 template <typename F>
-__attribute__((noinline)) void parallel_for(size_t start, size_t end, F f,
-//inline void parallel_for(size_t start, size_t end, F f,
+//__attribute__((noinline)) void parallel_for(size_t start, size_t end, F f,
+inline void parallel_for(size_t start, size_t end, F f,
                          long granularity,
                          bool ) {
   
@@ -83,7 +92,6 @@ __attribute__((noinline)) void parallel_for(size_t start, size_t end, F f,
     granularity = maxgrain;
   //assert(granularity == 1);
 #else
-
   granularity = 0;
 #endif
 
@@ -105,7 +113,7 @@ __attribute__((noinline)) void parallel_for(size_t start, size_t end, F f,
 #else
 
 #if 1
-  cilk_for(size_t i=start; i<end; i++) f(i);
+  cilk_for(size_t i=start; i<end; i++) wrapperFi(f, i);//f(i);
 #else
 
   cilk_for(size_t i=0; i<(end-start)/granularity; i+=1) {
