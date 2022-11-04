@@ -15,22 +15,22 @@ CILKFLAGS = -DPARLAY_CILK -fcilkplus
 #OPENCILKFLAGS = -DPARLAY_OPENCILK -fopencilk --opencilk-resource-dir=/home/sdp/opencilk/cheetah/build/
 OPENCILKFLAGS = -DPARLAY_OPENCILK -fcilkplus -Xclang -fpfor-spawn-strategy=1  -mllvm -cilk-set-maxgrainsize=2048  -mllvm -disable-loop-idiom=false
 
-UIPIFLAGS = -DPARLAY_OPENCILK -fforkd=uli -ftapir=serial -mllvm -lazy-poll-lowering=nop -mno-avx -Xclang -fpfor-spawn-strategy=1 -mllvm -disable-lazy-endisui=true -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=16 -mllvm -disable-loop-idiom=true
-POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -Xclang -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=16 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false
-#POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -Xclang -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=16 -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=true -mllvm -disable-loop-idiom=true
-POLL2FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=16 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=true
-EAGERFLAGS = -DPARLAY_OPENCILK -fforkd=eager -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -eager-enable-main-instrumentation=true -mllvm -eager-set-maxgrainsize=16 -mllvm -disable-loop-idiom=true
+UIPIFLAGS = -DPARLAY_OPENCILK -fforkd=uli -ftapir=serial -mllvm -lazy-poll-lowering=nop -mno-avx -Xclang -fpfor-spawn-strategy=1 -mllvm -disable-lazy-endisui=true -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -disable-loop-idiom=true
+POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -Xclang -fpfor-spawn-strategy=1 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false
+#POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -Xclang -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=true -mllvm -disable-loop-idiom=true
+POLL2FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=true
+EAGERFLAGS = -DPARLAY_OPENCILK -fforkd=eager -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -eager-enable-main-instrumentation=true -mllvm -eager-set-maxgrainsize=2048 -mllvm -disable-loop-idiom=true
 PBBFLAGS = -DHOMEGROWN -pthread
 
 ifdef OPENMP
-CC = g++
+CC = g++-12.2.0
 CFLAGS = $(OMPFLAGS) $(CCFLAGS)
-LFLAGS = $(OMPFLAGS) $(CLFLAGS)
+LFLAGS = $(OMPFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef CILK
-CC = g++
+CC = g++-12.2.0
 CFLAGS = $(CILKFLAGS) $(CCFLAGS)
-LFLAGS = $(CILKFLAGS) $(CLFLAGS)
+LFLAGS = $(CILKFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef OPENCILK
 #CC = /opt/opencilk/bin/clang++
@@ -38,32 +38,31 @@ else ifdef OPENCILK
 CC = clang++
 CFLAGS = $(OPENCILKFLAGS) $(CCFLAGS)
 #LFLAGS = $(OPENCILKFLAGS) $(CLFLAGS)
-LFLAGS = -fcilkplus $(CLFLAGS)
+LFLAGS = -fcilkplus $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef UIPI
 CC = clang++
 CFLAGS =  $(UIPIFLAGS) $(CCFLAGS)
-LFLAGS =  -fforkd=uli -ftapir=serial $(CLFLAGS) -fuse-ld=lld
+LFLAGS =  -fforkd=uli -ftapir=serial $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef POLL0
 CC = clang++
 CFLAGS =  $(POLL0FLAGS) $(CCFLAGS)
-LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld
+LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef POLL2
 CC = clang++
 CFLAGS =  $(POLL2FLAGS) $(CCFLAGS)
-LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld
+LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef EAGER
 CC = clang++
 CFLAGS =  $(EAGERFLAGS) $(CCFLAGS)
-LFLAGS =  -fforkd=eager -ftapir=serial $(CLFLAGS) -fuse-ld=lld
-
+LFLAGS =  -fforkd=eager -ftapir=serial $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else
-CC = g++
+CC = g++-12.2.0
 CFLAGS = $(PBBFLAGS) $(CCFLAGS)
-LFLAGS = $(PBBFLAGS) $(CLFLAGS)
+LFLAGS = $(PBBFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 endif
 
