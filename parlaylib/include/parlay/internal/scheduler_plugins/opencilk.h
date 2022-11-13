@@ -40,7 +40,7 @@ void parallel_for_real(size_t start, size_t end, F f,
   if (end <= start)
     return;
 
-  
+
   if (granularity == 0) {
     assert(0 && "cilk for not used");
     cilk_for(size_t i=start; i<end; i++) f(i);
@@ -66,76 +66,46 @@ void parallel_for_real(size_t start, size_t end, F f,
   for(size_t j=0; j<granularity; j++) {
     f(start+end*granularity+j);
   }
-  
+
 }
 
 #endif
 
-  
+
 template <typename F>
 //__attribute__((noinline)) void parallel_for(size_t start, size_t end, F f,
 inline void parallel_for(size_t start, size_t end, F f,
                          long granularity,
                          bool ) {
-  
+
 
 #if 0
-  //if (end <= start)
-  //  return;
+  //if (granularity == 0)
+  //granularity=1;
 
-  
-  size_t limit = end - start + 1;
-  size_t workers = num_workers();
-  granularity = (limit + (workers *8 ) - 1) / ( workers *8);
-  const long maxgrain=32;
-  if (granularity > maxgrain)
-    granularity = maxgrain;
-  //assert(granularity == 1);
-#else
-  granularity = 0;
-#endif
-
-#if 0
   if (granularity == 0) {
-    //#pragma cilk grainsize 1
-    //assert(0 && "cilk for not used");
-    cilk_for(size_t i=start; i<end; i++) f(i);
+    //cilk_for(size_t i=start; i<end; i++) f(i);
+    cilk_for(size_t i=start; i<end; i++) wrapperFi(f, i);
   } else if ((end - start) <= static_cast<size_t>(granularity)) {
-    for (size_t i=start; i < end; i++) f(i);
+    //for (size_t i=start; i < end; i++) f(i);
+    for (size_t i=start; i < end; i++) wrapperFi(f, i);
   } else {
     size_t n = end-start;
     size_t mid = (start + (9*(n+1))/16);
-    cilk_spawn parallel_for_real(start, mid, f, granularity, true);
-    parallel_for_real(mid, end, f, granularity, true);
+    cilk_spawn parallel_for(start, mid, f, granularity, true);
+    parallel_for(mid, end, f, granularity, true);
     cilk_sync;
   }
 
 #else
 
-#if 1
-  cilk_for(size_t i=start; i<end; i++) wrapperFi(f, i);//f(i);
-#else
-
-  cilk_for(size_t i=0; i<(end-start)/granularity; i+=1) {
-    
-    //for(size_t j=0; j<granularity; j++) {
-    //  size_t index = i*granularity+j+start;
-    //  f(index);
-    //}
-    parallel_for_real(start, i, f, granularity, true);
-  }
-
-  // Run this in parallel  
-  for(size_t j=start+((end-start)/granularity)*granularity; j<end; j++) {    
-    f(j);
-  }
-
+  //cilk_for(size_t i=start; i<end; i++)  f(i);
+  cilk_for(size_t i=start; i<end; i++)  wrapperFi(f, i);
 
 #endif
-#endif
-  
+
 }
-  
+
 
 }  // namespace parlay
 

@@ -13,13 +13,15 @@ OMPFLAGS = -DPARLAY_OPENMP -fopenmp
 CILKFLAGS = -DPARLAY_CILK -fcilkplus
 
 #OPENCILKFLAGS = -DPARLAY_OPENCILK -fopencilk --opencilk-resource-dir=/home/sdp/opencilk/cheetah/build/
-OPENCILKFLAGS = -DPARLAY_OPENCILK -fcilkplus -Xclang -fpfor-spawn-strategy=1  -mllvm -cilk-set-maxgrainsize=2048  -mllvm -disable-loop-idiom=false
+OPENCILKFLAGS = -DPARLAY_OPENCILK -fcilkplus  -Xclang -fpfor-spawn-strategy=1  -mllvm -cilk-set-maxgrainsize=2048  
+#-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
+#-mllvm -use-cilk-abi=false -mllvm -disable-loop-idiom=false 
 
 UIPIFLAGS = -DPARLAY_OPENCILK -fforkd=uli -ftapir=serial -mllvm -lazy-poll-lowering=nop -mno-avx -Xclang -fpfor-spawn-strategy=1 -mllvm -disable-lazy-endisui=true -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -disable-loop-idiom=true
-POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -Xclang -fpfor-spawn-strategy=1 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false
+POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -Xclang -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=10000000
 #POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -Xclang -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=true -mllvm -disable-loop-idiom=true
 POLL2FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=true
-EAGERFLAGS = -DPARLAY_OPENCILK -fforkd=eager -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -eager-enable-main-instrumentation=true -mllvm -eager-set-maxgrainsize=2048 -mllvm -disable-loop-idiom=true
+EAGERFLAGS = -DPARLAY_OPENCILK -fforkd=eager -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -eager-enable-main-instrumentation=true -mllvm -eager-set-maxgrainsize=2048 -mllvm -disable-loop-idiom=false
 PBBFLAGS = -DHOMEGROWN -pthread
 
 ifdef OPENMP
