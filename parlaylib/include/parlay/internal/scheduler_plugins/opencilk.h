@@ -36,6 +36,8 @@ extern void push_workmsg(void** parallelCtx, int owner);
 extern void **get_stacklet_ctx();
 
 extern __thread int initDone;
+
+extern __thread int delegate_work;
 }
 
 #define getSP(sp) asm volatile("#getsp\n\tmovq %%rsp,%[Var]" : [Var] "=r" (sp))
@@ -46,6 +48,8 @@ extern __thread int initDone;
 
 extern std::map<long unsigned , std::set<long unsigned>> taskLen2Gran;
 extern std::map<long unsigned , std::set<long unsigned>> taskLen2Iteration;
+
+#define MULTIRETCALL
 
 #define ss_fence() __asm__ volatile ("lock addl $0,(%rsp)")
 namespace parlay {
@@ -65,25 +69,46 @@ namespace parlay {
    f(i);
  }
 
+template <typename F>
+__attribute__((noinline))
+void runiteration(size_t start, long granularity, size_t i, F f) {
+   for (size_t j=0; j<granularity; j++) {
+     f(start+granularity*i+j);
+   }
+ }
+
+template <typename F>
+__attribute__((noinline))
+void serial_for(size_t start, size_t end, F f) {
+   for (size_t i=start; i < end; i++) f(i);
+ }
+
+
  template <typename Lf, typename Rf>
  inline void par_do(Lf left, Rf right, bool) {
+   //delegate_work++;
+#if 1
    cilk_spawn wrapperF(right);
    wrapperF(left);
    cilk_sync;
-   //cilk_spawn right();
-   //left();
-   //cilk_sync;
+#else
+   cilk_spawn right();
+   left();
+   cilk_sync;
+#endif
+   //delegate_work--;
  }
 
 
 template <typename F>
-__attribute__((noinline)) void parallel_for_eager(size_t start, size_t end, F f, long granularity, bool conservative, int depth, int threshDepth);
+__attribute__((noinline))
+__attribute__((no_unwind_path))
+void parallel_for_eager(size_t start, size_t end, F f, long granularity, bool conservative, int depth, int threshDepth);
 
 template <typename F>
 __attribute__((noinline))
 __attribute__((no_unwind_path))
-void parallel_for_eager_wrapper(size_t start, size_t end, F f, long granularity,
-				bool conservative, int depth, int threshDepth, void** readyCtx) {
+void parallel_for_eager_wrapper(size_t start, size_t end, F f, long granularity, bool conservative, int depth, int threshDepth, void** readyCtx) {
   int bWorkNotPush;
   push_workctx_eager(readyCtx, &bWorkNotPush);
   parallel_for_eager(start, end, f, granularity, true, depth, threshDepth);
@@ -91,32 +116,12 @@ void parallel_for_eager_wrapper(size_t start, size_t end, F f, long granularity,
   return;
 }
 
- template <typename F>
-   __attribute__((noinline)) void parallel_for_recurse(size_t start, size_t end, F f, long granularity, bool conservative) {
-
+template <typename F>
+__attribute__((noinline))
+void parallel_for_recurse(size_t start, size_t end, F f, long granularity, bool conservative) {
  tail_recurse:
    if ((end - start) <= static_cast<size_t>(granularity)) {
-#if 1
      for (size_t i=start; i < end; i++) f(i);
-#else
-     size_t len = end - start;
-     size_t len_g = len/8;
-     for (size_t i=0; i < len_g; i++) {
-       //f(start+granularity*i+j);
-       f(start+8*i+0);
-       f(start+8*i+1);
-       f(start+8*i+2);
-       f(start+8*i+3);
-       f(start+8*i+4);
-       f(start+8*i+5);
-       f(start+8*i+6);
-       f(start+8*i+7);
-    }
-    long start_rem = start + 8*(len_g);
-    for(size_t i = start_rem; i<end; i++) {
-      f(i);
-    }
-#endif
    } else {
      size_t n = end-start;
      size_t mid = (start + n/2);
@@ -124,12 +129,18 @@ void parallel_for_eager_wrapper(size_t start, size_t end, F f, long granularity,
      start = mid;
      goto tail_recurse;
    }
-
    cilk_sync;
-
  }
 
 static int dummyfcn() {return 0;}
+
+template <typename F>
+__attribute__((noinline))
+void parallel_for_recurse_seq(size_t start, size_t end, F f, long granularity, bool conservative, long threshold);
+
+template <typename F>
+__attribute__((noinline))
+void parallel_for_seq(size_t start, size_t end, F f, long granularity, bool conservative) ;
 
  template <typename F>
 __attribute__((noinline))
@@ -137,8 +148,12 @@ __attribute__((no_unwind_path))
 void parallel_for_eager(size_t start, size_t end, F f, long granularity,  bool conservative, int depth, int threshDepth) {
 
    if(end-start <= threshDepth) {
-     //printf("[%d] depth: %d >= %d\n", threadId, depth, threshDepth);
+#if 0
      parallel_for_recurse(start, end, f, granularity, true);
+#else
+     parallel_for_seq(start, end, f, granularity, true);
+#endif
+
      return;
    }
 
@@ -153,35 +168,13 @@ void parallel_for_eager(size_t start, size_t end, F f, long granularity,  bool c
    readyCtx[20] = (void*)&readyCtx[0];
 
    if ((end - start) <= static_cast<size_t>(granularity)) {
-#if 1
      for (size_t i=start; i < end; i++) f(i);
-#else
-     size_t len = end - start;
-     size_t len_g = len/8;
-     for (size_t i=0; i < len_g; i++) {
-       //f(start+granularity*i+j);
-       f(start+8*i+0);
-       f(start+8*i+1);
-       f(start+8*i+2);
-       f(start+8*i+3);
-       f(start+8*i+4);
-       f(start+8*i+5);
-       f(start+8*i+6);
-       f(start+8*i+7);
-    }
-    long start_rem = start + 8*(len_g);
-    for(size_t i = start_rem; i<end; i++) {
-      f(i);
-    }
-#endif
    }  else {
      size_t n = end-start;
      size_t mid = (start + n/2);
-
      __builtin_multiret_call(2, 1, (void*)&dummyfcn, (void*)readyCtx, &&det_cont, &&det_cont);
      parallel_for_eager_wrapper(start, mid, f, granularity, true, depth+1, threshDepth, (void**) &readyCtx[0]);
    det_cont:{
-       //intregTrashed();
        parallel_for_eager(mid, end, f, granularity, true, depth+1, threshDepth);
      }
 
@@ -192,11 +185,9 @@ void parallel_for_eager(size_t start, size_t end, F f, long granularity,  bool c
        __builtin_multiret_call(2, 1, (void*)&dummyfcn, (void*)readyCtx, &&sync_pre_resume_parent, &&sync_pre_resume_parent);
        resume2scheduler_eager((void**)readyCtx, 1);
      sync_pre_resume_parent: {
-	 //intregTrashed();
 	 set_joincntr((void**)readyCtx);
        }
      }
-     //gCntrAba[threadId].ptr++;
      deallocate_parallelctx((void**)readyCtx);
    }
    return;
@@ -210,101 +201,87 @@ void parallel_for_seq(size_t start, size_t end, F f,
 
   size_t len = end - start;
   size_t len_g = len/granularity;
-  if (len_g > 1) {
+  if (len_g >= 1) {
     cilk_for (size_t i=0; i < len_g; i++) {
+#if 1
       for (size_t j=0; j<granularity; j++) {
 	f(start+granularity*i+j);
       }
+#else
+      runiteration(start, granularity, i, f);
+#endif
     }
     long start_rem = start + granularity*(len_g);
     for(size_t i = start_rem; i<end; i++) {
       f(i);
     }
   } else {
-    cilk_for (size_t i=start; i < end; i++) {
+    for (size_t i=start; i < end; i++) {
       f(i);
     }
   }
 }
 
-static __thread int delegate_work = 0;
+template <typename F>
+__attribute__((noinline))
+void parallel_for_recurse_seq(size_t start, size_t end, F f, long granularity, bool conservative, long threshold) {
 
-static  size_t start_par[72] ;
-static  size_t end_par[72] ;
-static  long granularity_par[72] ;
+ tail_recurse:
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else if ((end - start) <= static_cast<size_t>(threshold)) {
+    parallel_for_seq(start, end, f, granularity, true);
+  } else {
+    size_t n = end-start;
+    size_t mid = (start + n/2);
+    cilk_spawn parallel_for_recurse_seq(start, mid, f, granularity, true, threshold);
+    start = mid;
+    goto tail_recurse;
+  }
+  cilk_sync;
+}
+
 
 template <typename F>
 __attribute__((noinline))
 __attribute__((no_unwind_path))
-void parallel_for_static(size_t start, size_t end, F f, long granularity, bool conservative, void** resumeCtx) {
+void parallel_for_static(size_t start, size_t end, F f, long granularity, bool conservative) {
   size_t size = end - start;
   size_t nWorkers = num_workers();
   size_t static_range = size/nWorkers;
 
+  void* resumeCtx[64];
+  resumeCtx[17] = (void*)num_workers();
+  resumeCtx[19] = (void*)threadId;
+  resumeCtx[23] = (void*)3;
+
   void* parallelCtx[64];
   getSP(resumeCtx[2]);
-#if 1
   __builtin_multiret_call(2, 1, (void*)&dummyfcn, (void*)parallelCtx, &&det_cont_static, &&det_cont_static);
-#else
-  volatile int dummy_a = 0;
-  asm volatile("movl $0, %[ARG]\n\t":[ARG] "=r" (dummy_a));
-  __builtin_uli_save_context((void*)parallelCtx, &&det_cont_static_before);
-  if(dummy_a){
-  det_cont_static_before:
-    goto det_cont_static;
-  }
-#endif
-
   for(int i=1; i<nWorkers; i++) {
-    start_par[i] = start + i*static_range;
-    end_par[i] = start + (i+1)*(static_range);
-    if(i == nWorkers-1)
-      end_par[i] = end;
-    granularity_par[i] = granularity;
     // Send the message
     push_workmsg((void**)parallelCtx, i);
   }
-  //ss_fence();
-  //printf("[%d]Start range static: %zu %zu\n", threadId, start, start+static_range);
   //parallel_for_recurse(start, start+static_range, f, granularity, true);
-  parallel_for_eager(start, start+static_range, f, granularity, true, 0, static_range/num_workers());
-  //for (size_t i=start; i < start+static_range; i++) f(i);
-  //printf("[%d]End range static: %zu %zu\n", threadId, start, start+static_range);
+  parallel_for_eager(start, start+static_range, f, granularity, true, 0, static_range/(num_workers()));
 
   if(resumeCtx[17] > (void*)1) {
     //assert(resumeCtx[17] != 0 && "Synchronizer can not be 0 here");
     //getSP(resumeCtx[2]);
-#if 1
     __builtin_multiret_call(2, 1, (void*)&dummyfcn, (void*)resumeCtx, &&sync_pre_resume_parent_static, &&sync_pre_resume_parent_static);
-#else
-    __builtin_uli_save_context((void*)resumeCtx, &&sync_pre_resume_parent_static_before);
-    if(dummy_a) {
-    sync_pre_resume_parent_static_before:
-      goto sync_pre_resume_parent_static;
-    }
-#endif
     suspend2scheduler_shared((void**)resumeCtx);
   sync_pre_resume_parent_static: {
-      //calleeTrashed();
-      //callerTrashed();
     }
   }
   return;
 
   det_cont_static: {
-    //calleeTrashed();
-    //callerTrashed();
     size_t start_par_l = start + threadId*static_range;
     size_t end_par_l = start + (threadId+1)*(static_range);
     if(threadId == nWorkers-1)
       end_par_l = end;
-
-    //printf("[%d]Start range static: [%zu + %zu] %zu %zu granularity:%d\n", threadId, start, threadId*static_range, start_par_l, end_par_l, granularity_par[threadId]);
-    //parallel_for_recurse(start_par[threadId], end_par[threadId], f, granularity_par[threadId], true);
-    parallel_for_eager(start_par[threadId], end_par[threadId], f, granularity_par[threadId], true, 0, (end_par[threadId]-start_par[threadId]) / num_workers() );
-    //for (size_t i=start_par[threadId]; i < end_par[threadId]; i++) f(i);
-    //for (size_t i=start_par_l; i < end_par_l; i++) f(i);
-    // printf("[%d]End range static: %zu %zu\n", threadId, start_par[threadId], end_par[threadId]);
+    //parallel_for_recurse(start_par_l, end_par_l, f, granularity, true);
+    parallel_for_eager(start_par_l, end_par_l, f, granularity, true, 0, (end_par_l-start_par_l) / (num_workers()) );
     resume2scheduler((void**)resumeCtx, get_stacklet_ctx()[18]);
   }
   return;
@@ -312,14 +289,26 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
 
 
 template <typename F>
-//__attribute__((noinline)) void parallel_for(size_t start, size_t end, F f,
 inline void parallel_for(size_t start, size_t end, F f,
                          long granularity,
                          bool ) {
-#if 0
+#if 1
   // Default
   if (granularity == 0) {
+#if 0
+    size_t len = end-start;
+    const long longGrainSize = 2048;
+    //const long longGrainSize = 8;
+    size_t eightNworkers = 8*num_workers();
+    long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+    granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+    parallel_for_recurse(start, end, f, granularity, true);
+    return;
+#else
+    //#pragma cilk grainsize grainSize
     cilk_for(size_t i=start; i<end; i++) f(i);
+#endif
+
   } else if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
@@ -332,84 +321,35 @@ inline void parallel_for(size_t start, size_t end, F f,
 #else
   // Experiment
   if ((end - start) <= static_cast<size_t>(granularity)) {
-#if 1
     for (size_t i=start; i < end; i++) f(i);
-#else
-    size_t len = end - start;
-    size_t len_g = len/8;
-    for (size_t i=0; i < len_g; i++) {
-      //f(start+granularity*i+j);
-      f(start+8*i+0);
-      f(start+8*i+1);
-      f(start+8*i+2);
-      f(start+8*i+3);
-      f(start+8*i+4);
-      f(start+8*i+5);
-      f(start+8*i+6);
-      f(start+8*i+7);
-    }
-    long start_rem = start + 8*(len_g);
-    for(size_t i = start_rem; i<end; i++) {
-      f(i);
-    }
-#endif
-
-  } else if (true || granularity == 0) {
+  } else if (granularity == 0 || true) {
+  //} else if (granularity == 0 ) {
 
     size_t len = end-start;
     size_t eightNworkers = 8*num_workers();
+    long thresholdprl = 0;
     if(granularity == 0) {
       long oriGran = granularity;
-      const long maxGran = 2048;
-      //const long maxGran = 8;
-      //granularity = (len + 8*num_workers() -1 )/(8*num_workers());
-      granularity = (len + eightNworkers -1 )/(eightNworkers);
-      if(granularity > maxGran)
-	granularity = maxGran;
+      //const long longGrainSize = 2048;
+      const long longGrainSize = 8;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+      thresholdprl = smallGrainSize;
     }
 
     if(len == 0)
       return;
-#if 0
-    int size = end - start;
-    // For eager
-    //parallel_for_eager(start, end, f, granularity, true, 0, 0);
-    //return;
 
-    // For lazy
-    //parallel_for_eager(start, end, f, granularity, true, 0, size+1);
-    //return;
-
-    //size_t nWorkers = num_workers();
-    size_t static_range = size/(eightNworkers);
-    if(delegate_work == 0) {
-      //parallel_for_seq(start, end, f, granularity, true);
-      //parallel_for_recurse(start, end, f, granularity, true);
-      delegate_work++;
-      parallel_for_eager(start, end, f, granularity, true, 0, static_range);
-      delegate_work--;
-    } else {
-      parallel_for_recurse(start, end, f, granularity, true);
-    }
-#else
     if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
       delegate_work++;
-      //printf("[%d] delegate_work: %d\n", threadId, delegate_work);
-      void* resumeCtx[64];
-      resumeCtx[17] = (void*)num_workers();
-      resumeCtx[19] = (void*)threadId;
-      resumeCtx[23] = (void*)3;
-      //printf("\n[%d]Start paralell static: %zu %zu ctx:%p granularity: %ld delegate_work=%d\n", threadId, start, end, resumeCtx, granularity, delegate_work);
-      parallel_for_static(start, end, f, granularity, true, (void**)resumeCtx);
-      //parallel_for_recurse(start, end, f, granularity, true);
-      //parallel_for_eager(start, end, f, granularity, true, 0, 0);
-      //printf("[%d]End paralell static: %zu %zu\n", threadId, start, end);
+      parallel_for_static(start, end, f, granularity, true);
+      //parallel_for_eager(start, end, f, granularity, true, 0, len/num_workers());
       delegate_work--;
     } else {
-      parallel_for_recurse(start, end, f, granularity, true);
-      //parallel_for_eager(start, end, f, granularity, true, 0, 0);
+      //parallel_for_recurse(start, end, f, granularity, true);
+      parallel_for_seq(start, end, f, granularity, true);
+      //parallel_for_recurse_seq(start, end, f, granularity, true, thresholdprl);
     }
-#endif
   } else {
     size_t n = end-start;
     size_t mid = (start + (9*(n+1))/16);
