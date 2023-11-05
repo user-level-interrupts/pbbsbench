@@ -50,7 +50,7 @@ extern int targetTable[144][2];
 extern std::map<long unsigned , std::set<long unsigned>> taskLen2Gran;
 extern std::map<long unsigned , std::set<long unsigned>> taskLen2Iteration;
 
-#define OPENCILKDEFAULT
+//#define OPENCILKDEFAULT
 //#define PARLAYREC_NOOPT
 //#define OPENCILKDEFAULT_FINE
 //#define PARLAYREC
@@ -58,9 +58,12 @@ extern std::map<long unsigned , std::set<long unsigned>> taskLen2Iteration;
 //#define PRCPRL
 //#define DELEGATEEAGERPRL
 //#define EAGERPRC
-//#define DELEGATEPRC
+#define DELEGATEPRC
 //#define DELEGATEPRL
 //#define DELEGATEPRL_NOOPT
+
+//#define NOOPT
+#define DELEGATEWORK_ENABLED
 
 #define ss_fence() __asm__ volatile ("lock addl $0,(%rsp)")
 namespace parlay {
@@ -99,7 +102,9 @@ void serial_for(size_t start, size_t end, F f) {
  template <typename Lf, typename Rf>
  inline void par_do(Lf left, Rf right, bool) {
    // Cause error in neighbors if not turned on
-   //delegate_work++;
+#ifdef DELEGATEWORK_ENABLED
+   delegate_work++;
+#endif
 #if 1
    cilk_spawn wrapperF(right);
    wrapperF(left);
@@ -109,7 +114,9 @@ void serial_for(size_t start, size_t end, F f) {
    left();
    cilk_sync;
 #endif
-   //delegate_work--;
+#ifdef DELEGATEWORK_ENABLED
+   delegate_work--;
+#endif
  }
 
 
@@ -332,7 +339,7 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
   } else {
     parallel_for_recurse(start, start+static_range, f, granularity, true);
   }
-#else  
+#else
   //parallel_for_eager(start, start+static_range, f, granularity, true, 0, static_range/(num_workers()), static_range/(8*num_workers()));
   parallel_for_eager(start, start+static_range, f, granularity, true, 0, 0, 0);
 #endif
@@ -357,9 +364,9 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
 #if 1
 
 #if 0
-    if(threadId < nWorkers/2) {    
+    if(threadId < nWorkers/2) {
       push_workmsg((void**)parallelCtx, threadId+nWorkers/2);
-    }    
+    }
 #else
     if(targetTable[threadId][0] != 0) {
       //printf("[%d] Push work to %d\n", threadId, targetTable[threadId][0]);
@@ -389,10 +396,10 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
     } else {
       parallel_for_recurse(start_par_l, end_par_l, f, granularity, true);
     }
-#else   
+#else
     //parallel_for_eager(start_par_l, end_par_l, f, granularity, true, 0, (end_par_l-start_par_l) / (num_workers()), (end_par_l-start_par_l) / (8*num_workers()) );
     parallel_for_eager(start_par_l, end_par_l, f, granularity, true, 0, 0, 0);
-#endif    
+#endif
     resume2scheduler((void**)resumeCtx, get_stacklet_ctx()[18]);
   }
   return;
@@ -405,7 +412,7 @@ inline void parallel_for(size_t start, size_t end, F f,
                          bool ) {
 
 
-#if defined(OPENCILKDEFAULT) 
+#if defined(OPENCILKDEFAULT)
 
   // Default
   if (granularity == 0) {
@@ -413,7 +420,7 @@ inline void parallel_for(size_t start, size_t end, F f,
   } else if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
-#if 0
+#ifdef NOOPT
     cilk_for(size_t i=start; i<end; i++) f(i);
 #else
     size_t n = end-start;
@@ -424,7 +431,7 @@ inline void parallel_for(size_t start, size_t end, F f,
 #endif
   }
 
-#elif defined(PARLAYREC_NOOPT) 
+#elif defined(PARLAYREC_NOOPT)
 
   // Default
   if ((end - start) <= static_cast<size_t>(granularity)) {
@@ -436,10 +443,10 @@ inline void parallel_for(size_t start, size_t end, F f,
   size_t eightNworkers = 8*num_workers();
   long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
   granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-  
+
   parallel_for_recurse(start, end, f, granularity, true);
-  
-#elif defined(OPENCILKDEFAULT_FINE) 
+
+#elif defined(OPENCILKDEFAULT_FINE)
 
   // Default
   if (granularity == 0) {
@@ -449,36 +456,36 @@ inline void parallel_for(size_t start, size_t end, F f,
     size_t eightNworkers = 8*num_workers();
     long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
     granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-    
+
     switch(granularity) {
     case 1:
 #pragma cilk grainsize 1
       cilk_for(size_t i=start; i<end; i++) f(i);
-      return;      
+      return;
     case 2:
 #pragma cilk grainsize 2
       cilk_for(size_t i=start; i<end; i++) f(i);
-      return;      
+      return;
     case 3:
 #pragma cilk grainsize 3
       cilk_for(size_t i=start; i<end; i++) f(i);
-      return;      
+      return;
     case 4:
 #pragma cilk grainsize 4
       cilk_for(size_t i=start; i<end; i++) f(i);
-      return;      
+      return;
     case 5:
 #pragma cilk grainsize 5
       cilk_for(size_t i=start; i<end; i++) f(i);
-      return;      
+      return;
     case 6:
 #pragma cilk grainsize 6
       cilk_for(size_t i=start; i<end; i++) f(i);
-      return;      
+      return;
     case 7:
 #pragma cilk grainsize 7
       cilk_for(size_t i=start; i<end; i++) f(i);
-      return;      
+      return;
     case 8:
     default:
 #pragma cilk grainsize 8
@@ -497,7 +504,7 @@ inline void parallel_for(size_t start, size_t end, F f,
   }
 
 
-#elif defined(PARLAYREC) 
+#elif defined(PARLAYREC)
 
   if (granularity == 0) {
     size_t len = end-start;
@@ -506,7 +513,7 @@ inline void parallel_for(size_t start, size_t end, F f,
     size_t eightNworkers = 8*num_workers();
     long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
     granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-    
+
     parallel_for_recurse(start, end, f, granularity, true);
   } else if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
@@ -519,7 +526,7 @@ inline void parallel_for(size_t start, size_t end, F f,
   }
 
 #elif defined(DELEGATEEAGERPRC)
-  
+
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
@@ -551,15 +558,15 @@ inline void parallel_for(size_t start, size_t end, F f,
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
-    
+
     long thresholdprl = 0;
     size_t len = end-start;
     if(granularity == 0) {
       size_t len = end-start;
-      size_t eightNworkers = 8*num_workers();    
+      size_t eightNworkers = 8*num_workers();
       //const long longGrainSize = 2048;
       const long longGrainSize = 8;
-      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);    
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
       thresholdprl = smallGrainSize;
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
     }
@@ -569,7 +576,7 @@ inline void parallel_for(size_t start, size_t end, F f,
     parallel_for_recurse_seq(start, end, f, granularity, true, thresholdprl);
   }
 
-#elif defined(DELEGATEEAGERPRL) 
+#elif defined(DELEGATEEAGERPRL)
 
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
@@ -577,7 +584,7 @@ inline void parallel_for(size_t start, size_t end, F f,
     size_t len = end-start;
     //if(true || granularity == 0) {
     if(granularity == 0) {
-      long oriGran = granularity;      
+      long oriGran = granularity;
       size_t eightNworkers = 8*num_workers();
       //const long longGrainSize = 2048;
       const long longGrainSize = 8;
@@ -598,7 +605,7 @@ inline void parallel_for(size_t start, size_t end, F f,
   }
 
 #elif defined(DELEGATEPRC)
-  
+
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
@@ -627,7 +634,7 @@ inline void parallel_for(size_t start, size_t end, F f,
   }
 
 #elif defined(DELEGATEPRL)
-  
+
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
@@ -657,7 +664,7 @@ inline void parallel_for(size_t start, size_t end, F f,
       } else {
 	parallel_for_recurse(start, end, f, granularity, true);
       }
-      
+
     }
   }
 
@@ -674,17 +681,17 @@ inline void parallel_for(size_t start, size_t end, F f,
   const long longGrainSize = 8;
   const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
   granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-  
+
   if(len == 0)
     return;
-  
+
   if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     delegate_work++;
     parallel_for_static(start, end, f, granularity, true);
     delegate_work--;
   } else {
 
-#if 0    
+#if 0
     if(oriGran == -1) {
       parallel_for_recurse_seq2(start, end, f, granularity, true, end-start);
       return;
@@ -694,7 +701,7 @@ inline void parallel_for(size_t start, size_t end, F f,
     //size_t eightNworkers = 8*num_workers();
     size_t eightNworkers = (num_workers()+2)/2;
     long thres = (len)/(eightNworkers);
-    
+
 #if 1
     delegate_work++;
     if(thres > granularity) {
@@ -707,7 +714,7 @@ inline void parallel_for(size_t start, size_t end, F f,
     delegate_work++;
     parallel_for_recurse_seq2(start, end, f, granularity, true, end-start);
     delegate_work--;
-#endif  
+#endif
   }
 
 #elif defined(EAGERPRC)
@@ -715,13 +722,13 @@ inline void parallel_for(size_t start, size_t end, F f,
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
-    
+
     size_t len = end-start;
     if(granularity == 0) {
-      size_t eightNworkers = 8*num_workers();    
+      size_t eightNworkers = 8*num_workers();
       const long longGrainSize = 2048;
       //const long longGrainSize = 8;
-      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);    
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
       //long thresholdprl = smallGrainSize;
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
     }
