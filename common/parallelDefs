@@ -5,62 +5,40 @@ JEMALLOCLD = $(shell jemalloc-config --libdir)
 JEMALLOC = -L$(JEMALLOCLD) -ljemalloc
 endif
 
-#CCFLAGS = -mcx16 -O3 -std=c++17 -DNDEBUG -I .
+# TODO: disable JEMALLOC for now, issue with BFS -O1
+JEMALLOCLD = 
+JEMALLOC = 
+
+#CCFLAGS = -mcx16 -O2 -std=c++17 -DNDEBUG -I .
 CCFLAGS = -mcx16 -O3 -std=c++17 -DNDEBUG -I .
 CLFLAGS = -ldl $(JEMALLOC)
 
 OMPFLAGS = -DPARLAY_OPENMP -fopenmp
-#CILKFLAGS = -DPARLAY_CILK -fcilkplus
-CILKFLAGS = -DPARLAY_OPENCILK -fcilkplus  -Xclang -fpfor-spawn-strategy=1  -mllvm -cilk-set-maxgrainsize=2048
+CILKFLAGS = -DPARLAY_CILK -fcilkplus
 
-#-ffp-contract=off
-
-#-mllvm -debug-only=loop-stripmine
-#-mllvm -debug-only=serialize-small-tasks
+#-ffp-contract=off : For convex hull
 # New compiler
 OPENCILKFLAGS = -DPARLAY_OPENCILK -fopencilk --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
-# Old compiler
-#OPENCILKFLAGS = -DPARLAY_OPENCILK -fcilkplus  -Xclang -fpfor-spawn-strategy=1  -mllvm -cilk-set-maxgrainsize=2048
-
-#-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
-#-mllvm -use-cilk-abi=false -mllvm -disable-loop-idiom=false
-
 UIPIFLAGS = -DPARLAY_OPENCILK -fforkd=uli -ftapir=serial -mllvm -lazy-poll-lowering=nop -mno-avx -Xclang -fpfor-spawn-strategy=1 -mllvm -disable-lazy-endisui=true -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -disable-loop-idiom=true
 
-NOPOLLFLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -fpfor-spawn-strategy=1 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
+NOPOLLFLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -fpfor-spawn-strategy=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
-# New compiler
-# -fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer
-POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer -mllvm -lazy-poll-lowering=unwind-ulifsim -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/ -mllvm -stripmine-loops=false -mllvm -debug-only=loop-stripmine -mllvm -serialize-unprofitable-loops=false
-
-# Old compiler
-#POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -Xclang -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=1 -mllvm -enable-force-unwind=false
-
-#POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim  -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=1  --opencilk-resource-dir=../../../../opencilk/cheetah/build/
+# Somehow needed to stripmine-loops to equal to false to make ST working
+POLL0FLAGS = -DPARLAY_OPENCILK -mllvm -stripmine-loops=false -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
 # Debug: Stats over time
-#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -Xclang -fpfor-spawn-strategy=1 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=false -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=1
+#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
-#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer -mllvm -lazy-poll-lowering=unwind-ulifsim -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=0 -mllvm -lazy-enable-main-instrumentation=false -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false -mllvm -lazy-set-maxinstpoll=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
-
-POLL2FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer -mllvm -lazy-poll-lowering=unwind-ulifsim  -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/ -mllvm -stripmine-loops=false -mllvm -debug-only=loop-stripmine -mllvm -serialize-unprofitable-loops=false
-
-#POLL2FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -Xclang -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=1 -mllvm -enable-force-unwind=false
+POLL2FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
 # Debug: Stats over time
-#POLL2FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=unwind-ulifsim -Xclang -fpfor-spawn-strategy=1 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=true -mllvm -disable-loop-idiom=false -mllvm -lazy-set-maxinstpoll=1
-
-#POLL2FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer -mllvm -lazy-poll-lowering=unwind-ulifsim -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -lazy-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false -mllvm -lazy-set-maxinstpoll=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
-
+#POLL2FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
 EAGERFLAGS = -DPARLAY_OPENCILK -fforkd=eager -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -eager-enable-main-instrumentation=true -mllvm -eager-set-maxgrainsize=2048 -mllvm -disable-loop-idiom=false -fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
 # Debug stats over time
-#EAGERFLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=eager -ftapir=serial -mllvm -lazy-poll-lowering=nop -Xclang -fpfor-spawn-strategy=1 -mllvm -eager-enable-main-instrumentation=false -mllvm -eager-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer
-
 #EAGERFLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=eager -ftapir=serial -mllvm -lazy-poll-lowering=nop  -fpfor-spawn-strategy=1 -mllvm -eager-enable-main-instrumentation=false -mllvm -eager-set-maxgrainsize=2048 -mllvm -enable-poll-epoch=false -mllvm -disable-loop-idiom=false -fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer --opencilk-resource-dir=../../../../opencilk/cheetah/build/
-
 
 PBBFLAGS = -DHOMEGROWN -pthread
 SEQFLAGS=-DPARLAY_SEQUENTIAL
@@ -85,11 +63,10 @@ else ifdef OPENCILK
 #CC = /afs/ece/project/seth_group/pakha/my-opencilk-repo/build/bin/clang++
 CC = clang++
 
-CFLAGS = $(OPENCILKFLAGS) $(CCFLAGS) -mllvm -stripmine-loops=false -mllvm -serialize-unprofitable-loops=false -mllvm -debug-only=loop-stripmine #-gdwarf-4
-#CFLAGS = $(OPENCILKFLAGS) $(CCFLAGS)
+CFLAGS = $(OPENCILKFLAGS) $(CCFLAGS)
 
 # New compiler
-LFLAGS = $(OPENCILKFLAGS) $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64 #-gdwarf-4
+LFLAGS = $(OPENCILKFLAGS) $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 # Old compiler
 #LFLAGS = -fcilkplus $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
@@ -100,22 +77,18 @@ CFLAGS =  $(UIPIFLAGS) $(CCFLAGS)
 LFLAGS =  -fforkd=uli -ftapir=serial $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef POLL0
-#CC = /afs/ece/project/seth_group/pakha/my-opencilk-repo/build/bin/clang++
 CC = clang++
 #CC=/afs/ece/project/seth_group/pakha/uli/src/compiler/build/bin/clang++
 CFLAGS =  $(POLL0FLAGS) $(CCFLAGS)
 LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef POLL2
-#CC = /afs/ece/project/seth_group/pakha/my-opencilk-repo/build/bin/clang++
 CC = clang++
-#CC=/afs/ece/project/seth_group/pakha/uli/src/compiler/build/bin/clang++
 CFLAGS =  $(POLL2FLAGS) $(CCFLAGS)
 LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef EAGER
 CC = clang++
-#CC = /afs/ece/project/seth_group/pakha/my-opencilk-repo/build/bin/clang++
 CFLAGS =  $(EAGERFLAGS) $(CCFLAGS)
 LFLAGS =  -fforkd=eager -ftapir=serial  $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
@@ -131,9 +104,7 @@ CFLAGS =  $(NONSERIALELISIONFLAGS) $(CCFLAGS)
 LFLAGS = $(OPENCILKFLAGS) $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef NOPOLL
-CC = /afs/ece/project/seth_group/pakha/my-opencilk-repo/build/bin/clang++
-#CC = clang++
-#CC=/afs/ece/project/seth_group/pakha/uli/src/compiler/build/bin/clang++
+CC = clang++
 CFLAGS =  $(NOPOLLFLAGS) $(CCFLAGS)
 LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
