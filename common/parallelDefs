@@ -25,7 +25,7 @@ UIPIFLAGS = -DPARLAY_OPENCILK -fforkd=uli -ftapir=serial -mllvm -lazy-poll-lower
 NOPOLLFLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -fpfor-spawn-strategy=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
 # Somehow needed to stripmine-loops to equal to false to make ST working
-POLL0FLAGS = -DPARLAY_OPENCILK -mllvm -stripmine-loops=false -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
+POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
 # Debug: Stats over time
 #POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/
