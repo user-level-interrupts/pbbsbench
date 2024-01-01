@@ -71,9 +71,11 @@ namespace parlay {
 
  // IWYU pragma: private, include "../../parallel.h"
 
- inline size_t num_workers() { return __cilkrts_get_nworkers(); }
- //inline size_t num_workers() { return cilkg_nproc; }
+ //inline size_t num_workers() { return __cilkrts_get_nworkers(); }
+ // The if statement is needed for classify since num_workers is accessed before intitialized?
+ inline size_t num_workers() { return (cilkg_nproc == 0)? __cilkrts_get_nworkers() : cilkg_nproc; }
  inline size_t worker_id() { return __cilkrts_get_worker_number(); }
+ //inline size_t worker_id() { return threadId; }
 
  template <typename F>
  __attribute__((noinline)) void wrapperF(F f) {
@@ -111,9 +113,11 @@ void parallel_for_noinline(size_t start, size_t end, F f) {
    // Cause error in neighbors if not turned on
 #ifdef DELEGATEWORK_ENABLED
    delegate_work++;
+
    // Needed for index, and neighbors when using delegatation. TODO: Why?
    cilk_spawn wrapperF(right);
    wrapperF(left);
+
    cilk_sync;
    delegate_work--;
 #else
@@ -127,6 +131,7 @@ void parallel_for_noinline(size_t start, size_t end, F f) {
 template <typename F>
 __attribute__((noinline))
 __attribute__((no_unwind_path))
+__attribute__((forkable))
 void parallel_for_eager(size_t start, size_t end, F f, long granularity, bool conservative, int depth, int threshDepth, int threshDepth2);
 
 template <typename F>
@@ -169,6 +174,7 @@ void parallel_for_seq(size_t start, size_t end, F f, long granularity, bool cons
  template <typename F>
 __attribute__((noinline))
 __attribute__((no_unwind_path))
+__attribute__((forkable))
    void parallel_for_eager(size_t start, size_t end, F f, long granularity,  bool conservative, int depth, int threshDepth, int threshDepth2) {
 
    if(end-start <= threshDepth) {
@@ -224,8 +230,8 @@ __attribute__((noinline))
 void parallel_for_seq(size_t start, size_t end, F f,
 		       long granularity,
 		       bool conservative) {
-  
-#if 0
+
+#if 1
   size_t len = end - start;
   size_t len_g = len/granularity;
   if (len_g >= 1) {
@@ -254,21 +260,21 @@ void parallel_for_seq(size_t start, size_t end, F f,
   if (len_g >= 1) {
     size_t i =0;
     volatile int j =0;
-    for (i=0; i < len_g; i++) {      
+    for (i=0; i < len_g; i++) {
       if(bParRealized) {
 	break;
       }
-      
+
       for (size_t j=0; j<granularity; j++) {
 	f(start+granularity*i+j);
       }
     }
-    
+
     if(bParRealized) {
-      size_t midIter = start+i*granularity + (end - (start+i*granularity))/2;      
+      size_t midIter = start+i*granularity + (end - (start+i*granularity))/2;
       cilk_spawn parallel_for_seq(start+i*granularity, midIter, f, granularity, true);
       parallel_for_seq(midIter, end, f, granularity, true);
-      cilk_sync;      
+      cilk_sync;
       return;
     }
 
@@ -322,10 +328,53 @@ void parallel_for_recurse_seq2(size_t start, size_t end, F f, long granularity, 
 }
 
 
+template <typename F>
+__attribute__((noinline))
+void parallel_for_static_wrapper(size_t start, size_t end, F f, long granularity, size_t static_range, size_t nWorkers, void* parallelCtx) {
+  size_t start_par_l = start + threadId*static_range;
+  size_t end_par_l = start + (threadId+1)*(static_range);
+  if(threadId == nWorkers-1) {
+    end_par_l = end;
+  }
+
+  if(targetTable[threadId][0] != 0) {
+    //printf("[%d] Push work to %d\n", threadId, targetTable[threadId][0]);
+    push_workmsg((void**)parallelCtx, targetTable[threadId][0]);
+  }
+  if(targetTable[threadId][1] != 0) {
+    //printf("[%d] Push work to %d\n", threadId, targetTable[threadId][1]);
+    push_workmsg((void**)parallelCtx, targetTable[threadId][1]);
+  }
+
+#if defined(DELEGATEPRC)
+  parallel_for_recurse(start_par_l, end_par_l, f, granularity, true);
+#elif defined(DELEGATEPRL)
+  long thres1 = (end_par_l-start_par_l) / (1*num_workers());
+  //long thres1 = (end_par_l-start_par_l) / (8);
+  //if(thres1 > 2048)
+  //  thres1 = 2048;
+  if(thres1 > granularity) {
+    parallel_for_recurse_seq2(start_par_l, end_par_l, f, granularity, true, thres1);
+  } else {
+    parallel_for_recurse(start_par_l, end_par_l, f, granularity, true);
+  }
+#elif defined(DELEGATEPRL_NOOPT)
+  long thres1 = (end_par_l-start_par_l) / (1*num_workers());
+  if(thres1 > granularity) {
+    parallel_for_recurse_seq2(start_par_l, end_par_l, f, granularity, true, thres1);
+  } else {
+    parallel_for_recurse(start_par_l, end_par_l, f, granularity, true);
+  }
+#else
+  //parallel_for_eager(start_par_l, end_par_l, f, granularity, true, 0, (end_par_l-start_par_l) / (num_workers()), (end_par_l-start_par_l) / (8*num_workers()) );
+  parallel_for_eager(start_par_l, end_par_l, f, granularity, true, 0, 0, 0);
+#endif
+}
 
 template <typename F>
 __attribute__((noinline))
 __attribute__((no_unwind_path))
+__attribute__((forkable))
 void parallel_for_static(size_t start, size_t end, F f, long granularity, bool conservative) {
   size_t size = end - start;
   size_t nWorkers = num_workers();
@@ -384,44 +433,7 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
   return;
 
   det_cont_static: {
-    size_t start_par_l = start + threadId*static_range;
-    size_t end_par_l = start + (threadId+1)*(static_range);
-    if(threadId == nWorkers-1) {
-      end_par_l = end;
-    }
-
-    if(targetTable[threadId][0] != 0) {
-      //printf("[%d] Push work to %d\n", threadId, targetTable[threadId][0]);
-      push_workmsg((void**)parallelCtx, targetTable[threadId][0]);
-    }
-    if(targetTable[threadId][1] != 0) {
-      //printf("[%d] Push work to %d\n", threadId, targetTable[threadId][1]);
-      push_workmsg((void**)parallelCtx, targetTable[threadId][1]);
-    }
-
-#if defined(DELEGATEPRC)
-    parallel_for_recurse(start_par_l, end_par_l, f, granularity, true);
-#elif defined(DELEGATEPRL)
-    long thres1 = (end_par_l-start_par_l) / (1*num_workers());
-    //long thres1 = (end_par_l-start_par_l) / (8);
-    //if(thres1 > 2048)
-    //  thres1 = 2048;
-    if(thres1 > granularity) {
-      parallel_for_recurse_seq2(start_par_l, end_par_l, f, granularity, true, thres1);
-    } else {
-      parallel_for_recurse(start_par_l, end_par_l, f, granularity, true);
-    }
-#elif defined(DELEGATEPRL_NOOPT)
-    long thres1 = (end_par_l-start_par_l) / (1*num_workers());
-    if(thres1 > granularity) {
-      parallel_for_recurse_seq2(start_par_l, end_par_l, f, granularity, true, thres1);
-    } else {
-      parallel_for_recurse(start_par_l, end_par_l, f, granularity, true);
-    }
-#else
-    //parallel_for_eager(start_par_l, end_par_l, f, granularity, true, 0, (end_par_l-start_par_l) / (num_workers()), (end_par_l-start_par_l) / (8*num_workers()) );
-    parallel_for_eager(start_par_l, end_par_l, f, granularity, true, 0, 0, 0);
-#endif
+    parallel_for_static_wrapper(start, end, f, granularity, static_range, nWorkers, parallelCtx);
     resume2scheduler((void**)resumeCtx, get_stacklet_ctx()[18]);
   }
   return;
@@ -466,7 +478,7 @@ inline void parallel_for(size_t start, size_t end, F f,
       size_t eightNworkers = 8*num_workers();
       long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-    } 
+    }
     parallel_for_seq(start, end, f, granularity, true);
   }
 

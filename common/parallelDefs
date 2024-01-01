@@ -22,15 +22,15 @@ OPENCILKFLAGS = -DPARLAY_OPENCILK -fopencilk --opencilk-resource-dir=../../../..
 
 UIPIFLAGS = -DPARLAY_OPENCILK -fforkd=uli -ftapir=serial -mllvm -lazy-poll-lowering=nop -mno-avx -Xclang -fpfor-spawn-strategy=1 -mllvm -disable-lazy-endisui=true -mllvm -lazy-enable-main-instrumentation=true -mllvm -lazy-set-maxgrainsize=2048 -mllvm -disable-loop-idiom=true
 
-NOPOLLFLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -fpfor-spawn-strategy=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
+NOPOLLFLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -fpfor-spawn-strategy=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
-# Somehow needed to stripmine-loops to equal to false to make ST working
-POLL0FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
+#-fno-omit-frame-pointer  -mno-omit-leaf-frame-pointer
+POLL0FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=1 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
 # Debug: Stats over time
 #POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
-POLL2FLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
+POLL2FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=1 -mllvm -lazy-enable-proper-polling=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/
 
 # Debug: Stats over time
 #POLL2FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/
