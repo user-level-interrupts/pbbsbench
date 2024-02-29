@@ -106,7 +106,8 @@ parlay::sequence<edgeId> mst(wghEdgeArray<vertexId,edgeWeight> &E) {
   unionFind<vertexId> UF(n);
   parlay::sequence<reservation> R(n);
   UnionFindStep UFStep1(IW1, UF, R,  mstFlags);
-  pbbs::speculative_for<vertexId>(UFStep1, 0, IW1.size(), 20, false);
+  //pbbs::speculative_for<vertexId>(UFStep1, 0, IW1.size(), 20, false);
+  pbbs::speculative_for<vertexId>(UFStep1, 0, IW1.size(), 5, false);
   t.next("union find loop");
 
   parlay::sequence<edgeId> mst = parlay::pack_index<edgeId>(mstFlags);
