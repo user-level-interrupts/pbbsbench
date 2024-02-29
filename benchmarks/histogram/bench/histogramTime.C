@@ -49,7 +49,8 @@ int main(int argc, char* argv[]) {
   char* oFile = P.getOptionValue("-o");
   int rounds = P.getOptionIntValue("-r",1);
   int verbose = P.getOption("-v");
-  int buckets = P.getOptionIntValue("-b",0);
+  //int buckets = P.getOptionIntValue("-b",0);
+  int buckets = P.getOptionIntValue("-b",100000000);
 
   auto In = readIntSeqFromFile<uint>(iFile);
   timeHistogram(In, rounds, buckets, verbose, oFile);

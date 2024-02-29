@@ -47,17 +47,17 @@ int main(int argc, char* argv[]) {
   char* iFile = P.getArgument(0);
   char* oFile = P.getOptionValue("-o");
   int rounds = P.getOptionIntValue("-r",1);
-  int bits = P.getOptionIntValue("-b",0);
+  int bits = P.getOptionIntValue("-b",27);
 
   auto In = get_tokens(iFile);
   elementType in_type = elementTypeFromHeader(In[0]);
   cout << "bits = " << bits << endl;
 
   switch (in_type) {
-  case intType: 
+  case intType:
     timeIntegerSort<uint>(In, rounds, bits, oFile);
     break;
-  case intPairT: 
+  case intPairT:
     timeIntegerSort<uintPair>(In, rounds, bits, oFile);
     break;
   default:
