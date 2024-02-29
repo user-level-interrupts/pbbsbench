@@ -6,8 +6,9 @@ JEMALLOC = -L$(JEMALLOCLD) -ljemalloc
 endif
 
 CCFLAGS = -mcx16 -DPARLAY_SEQUENTIAL -O3 -std=c++17 -DNDEBUG
-CLFLAGS = $(JEMALLOC)
+CLFLAGS = $(JEMALLOC) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
-CC = g++
+#CC = g++
+CC = clang++
 CFLAGS = $(CCFLAGS)
 LFLAGS = $(CLFLAGS)
