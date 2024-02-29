@@ -46,7 +46,8 @@ ucharseq bw_decode_(ucharseq const &s) {
   // sort character, returning original locations in sorted order
   auto lnks = parlay::delayed_tabulate(n, [&] (size_t i) {
      return link(i, s[i]);});
-  auto [links, c_] = parlay::internal::count_sort(parlay::make_slice(lnks), s, 256);
+  auto count_sort_result = parlay::internal::count_sort(parlay::make_slice(lnks), s, 256);
+  auto links = count_sort_result.first;
   t.next("count sort");
 
   // break lists into blocks
