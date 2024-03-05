@@ -45,6 +45,8 @@ extern __thread unsigned long long nTask;
 #pragma message (" OPENCILKDEFAULT_FINE_ENABLED ")
 #elif defined(PRC)
 #pragma message (" PRC_ENABLED ")
+#elif defined(PRL)
+#pragma message (" PRL_ENABLED ")
 #elif defined(PRCPRL)
 #pragma message (" PRCPRL_ENABLED ")
 #elif defined(DELEGATEPRC)
@@ -299,6 +301,7 @@ void parallel_for(size_t start, size_t end, F f,
     for (size_t i=start; i < end; i++) f(i);
   } else {
 #ifdef NOOPT
+    #pragma message (" OPENCILK NOOPT_ENABLED ")
     cilk_for(size_t i=start; i<end; i++) f(i);
 #else
     size_t n = end-start;
@@ -384,6 +387,24 @@ void parallel_for(size_t start, size_t end, F f,
     cilk_sync;
   }
 
+#elif defined(PRL)
+
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t len = end-start;
+    if(granularity == 0) {
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+    }
+    if(len == 0)
+      return;
+
+    parallel_for_seq(start, end, f, granularity, true);
+  }
+
 #elif defined(PRCPRL)
 
   if ((end - start) <= static_cast<size_t>(granularity)) {
@@ -440,6 +461,7 @@ void parallel_for(size_t start, size_t end, F f,
   } else {
     size_t len = end-start;
 #ifdef NOOPT
+    #pragma message (" DELEGATEPRCPRL NOOPT_ENABLED ")
     granularity=0;
 #endif
     if(granularity == 0) {
