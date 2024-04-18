@@ -234,6 +234,8 @@ void parallel_for_static_wrapper(size_t start, size_t end, F f, long granularity
 #endif
 }
 
+#if !(defined(OPENCILKDEFAULT) || defined(OPENCILKDEFAULT_FINE))
+
 template <typename F>
 __attribute__((noinline))
 __attribute__((no_unwind_path))
@@ -285,6 +287,7 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
   return;
  }
 
+#endif
 
 template <typename F>
 inline
