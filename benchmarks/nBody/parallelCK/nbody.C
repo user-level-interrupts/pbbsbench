@@ -67,7 +67,7 @@ using namespace std;
 using parlay::sequence;
 using vect3d = vect;
 
-#define CHECK 1
+#define CHECK 0
 
 // Following for 1e-3 accuracy
 //#define ALPHA 2.2
@@ -410,16 +410,22 @@ size_t getLeaves(node* tr, node** Leaves) {
 // This avoid a race condition on modifying ngh while someone else is
 // updating it.
 // *************************************************************
+__attribute__((noinline))
+__attribute__((no_unwind_path))
 auto direct(node* Left, node* ngh) {
+  timer t("\t\tdirect", false);
   auto LP = (Left->particles).data();
   auto R = (ngh->particles_d).data();
   size_t nl = Left->n;
   size_t nr = ngh->n;
   parlay::sequence<vect3d> hold(nr, vect3d(0.,0.,0.));
+  t.next("\t\Sequence");
   for (size_t i=0; i < nl; i++) {
+    //__builtin_uli_unwind_poll();
     vect3d frc(0.,0.,0.);
     particle pa = *LP[i];
     for (size_t j=0; j < nr; j++) {
+      //__builtin_uli_unwind_poll();
       particle& pb = R[j];
       vect3d v = pb.pt - pa.pt;
       double r2 = v.dot(v);
@@ -429,6 +435,7 @@ auto direct(node* Left, node* ngh) {
     }
     LP[i]->force = LP[i]->force + frc;
   }
+  t.next("\t\For loop finish");
   return hold;
 }
 
@@ -438,6 +445,7 @@ auto direct(node* Left, node* ngh) {
 void self(node* Tr) {
   auto PP = (Tr->particles).data();
   for (size_t i=0; i < Tr->n; i++) {
+    //__builtin_uli_unwind_poll();
     particle* pa = PP[i];
     for (size_t j=i+1; j < Tr->n; j++) {
 	particle* pb = PP[j];
@@ -473,6 +481,7 @@ void doDirect(node* a) {
   // picks up results from neighbors that were left in hold
   parlay::parallel_for (0, nleaves, [&] (size_t i) {
     for (size_t j = 0; j < Leaves[i]->leftNeighbors.size(); j++) {
+      //__builtin_uli_unwind_poll();
       node* L = Leaves[i];
       auto [u, v] = L->leftNeighbors[j];
       for (size_t k=0; k < Leaves[i]->n; k++) 
@@ -488,7 +497,7 @@ void doDirect(node* a) {
 // takes one step and places forces in particles[i]->force
 // *************************************************************
 void stepBH(sequence<particle*> &particles, double alpha) {
-  timer t("CK nbody");
+  timer t("CK nbody", true);
   size_t n = particles.size();
   TRglobal->precompute();
 
