@@ -35,16 +35,37 @@ using namespace benchIO;
 //  TIMING
 // *************************************************************
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 void timeNBody(parlay::sequence<point> const &pts, int rounds, char* outFile) {
   parlay::internal::timer t;
   auto pp = parlay::map(pts, [] (point p) -> particle {return particle(p, 1.0);});
   parlay::sequence<particle*> p = parlay::tabulate(pts.size(), [&] (size_t i) -> particle* {
       return &pp[i];});
 
-  time_loop(rounds, 0.0, //1.0,
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
 	    [&] () {},
 	    [&] () {nbody(p);},
 	    [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
+  time_loop(rounds, 1.0,
+	    [&] () {},
+	    [&] () {nbody(p);},
+	    [&] () {});
+#endif
   cout << endl;
 
   auto O = parlay::map(p, [] (particle* p) {

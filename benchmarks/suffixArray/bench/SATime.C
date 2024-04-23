@@ -36,14 +36,35 @@ using namespace std;
 using namespace benchIO;
 using uchar = unsigned char;
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 void timeSuffixArray(parlay::sequence<char> const &s, int rounds, char* outFile) {
   size_t n = s.size();
   auto ss = parlay::tabulate(n, [&] (size_t i) -> uchar {return (uchar) s[i];});
   parlay::sequence<indexT> R;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = suffixArray(ss);},
        [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
+  time_loop(rounds, 1.0,
+       [&] () {R.clear();},
+       [&] () {R = suffixArray(ss);},
+       [&] () {});
+#endif
   cout << endl;
   if (outFile != NULL) writeSequenceToFile(R, outFile);
 }

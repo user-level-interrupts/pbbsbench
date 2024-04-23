@@ -30,15 +30,35 @@
 using namespace std;
 using namespace benchIO;
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
 template <class T>
 void timeIntegerSort(sequence<sequence<char>> In, int rounds, int bits, char* outFile) {
   auto in_vals = parseElements<T>(In.cut(1, In.size()));
   size_t n = in_vals.size();
   sequence<T> R;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+       [&] () {R.clear();},
+       [&] () {R = int_sort(make_slice(in_vals.data(),in_vals.data()+n), bits);},
+       [] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = int_sort(make_slice(in_vals.data(),in_vals.data()+n), bits);},
        [] () {});
+#endif
   if (outFile != NULL) writeSequenceToFile(R, outFile);
 }
 
