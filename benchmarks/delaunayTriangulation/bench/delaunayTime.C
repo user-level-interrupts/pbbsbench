@@ -85,7 +85,7 @@ void timeDelaunay(parlay::sequence<point> &pts, int rounds, char* outFile) {
   initworkers_env();
   initperworkers_sync(0,1);
 
-#if 0
+#if 1
 
   time_loop(rounds, 1.0,
 	    [&] () {R.P.clear(); R.T.clear();},

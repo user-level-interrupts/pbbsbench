@@ -42,32 +42,7 @@ static void updateState(const char* pforName, size_t tripCount, long grainsize, 
     return;
 
   char newName[1000];
-
-  // Put the trip count into a bin
-  size_t bin = 0;
-  if(tripCount <= 10)
-    bin = 10;
-  else if (tripCount <= 100)
-    bin = 100;
-  else if (tripCount <= 1000)
-    bin = 1000;
-  else if (tripCount <= 10000)
-    bin = 10000;
-  else if (tripCount <= 100000)
-    bin = 100000;
-  else if (tripCount <= 1000000)
-    bin = 1000000;
-  else if (tripCount <= 10000000)
-    bin = 10000000;
-  else if (tripCount <= 100000000)
-    bin = 100000000;
-  else if (tripCount <= 1000000000)
-    bin = 1000000000;
-  else
-    bin = 10000000000;
-
-
-  sprintf(newName, "%s+%lu+%ld+%d", pforName, bin, grainsize, depth);
+  sprintf(newName, "%s+%lu+%ld+%d", pforName, tripCount, grainsize, depth);
   strcpy(parallelFcn, newName);
   pollpfor();
 }
@@ -256,7 +231,6 @@ void parallel_for_recurse_seq(size_t start, size_t end, F f, long granularity, b
 template <typename F>
 __attribute__((noinline))
 void parallel_for_recurse_seq2(size_t start, size_t end, F f, long granularity, bool conservative, long threshold) {
-  // Error?
   __builtin_uli_lazyd_inst((void*)updateState, (void*)(updateState), end-start, granularity, delegate_work);
  tail_recurse:
   if ((end - start) <= static_cast<size_t>(threshold)) {
@@ -577,11 +551,12 @@ void parallel_for(size_t start, size_t end, F f,
 #if 1
       size_t eightNworkers = (num_workers()+2)/2;
       long thres = (len)/(eightNworkers);
-      if(thres > granularity) {
-	parallel_for_recurse_seq2(start, end, f, granularity, true, thres);
-      } else {
-	parallel_for_recurse(start, end, f, granularity, true);
-      }
+      //if(thres > granularity) {
+      //	parallel_for_recurse_seq2(start, end, f, granularity, true, thres);
+      //} else {
+      //	parallel_for_recurse(start, end, f, granularity, true);
+      //}
+      parallel_for_recurse_seq(start, end, f, granularity, true, thres);
 #else
       size_t eightNworkers = 8*num_workers();
       const long longGrainSize = MAXGRAINSIZE;
