@@ -11,6 +11,7 @@
 
 #include<set>
 #include<map>
+#include<stack>
 #include<unordered_map>
 #include<vector>
 #include<iostream>
@@ -37,22 +38,30 @@ extern __thread unsigned long long nTask;
 
 extern void pollpfor();
 
+static std::stack<std::string> pforStack[64];
+
 static void updateState(const char* pforName, size_t tripCount, long grainsize, int depth){
   if(!initDone)
     return;
 
   char newName[1000];
-  sprintf(newName, "%s+%lu+%ld+%d", pforName, tripCount, grainsize, depth);
+  // Cause of overhead, simple test+0+0+depth can achive 0.8 vs 0.4s in classify
+  sprintf(newName, "%s,%lu,%ld,%d", pforName, tripCount, grainsize, depth);
+
+  pforStack[threadId].push(std::string(parallelFcn));
+
   strcpy(parallelFcn, newName);
   pollpfor();
 }
 
 //static void revertToIdle(const char* pforName, size_t tripCount, long grainsize, int depth) {
-static void revertToIdle() {
+static void revertToIdle(const char* pforName, size_t tripCount, long grainsize, int depth) {
   if(!initDone)
     return;
 
-  strcpy(parallelFcn, "nonpfor");
+  strcpy(parallelFcn, pforStack[threadId].top().c_str());
+  pforStack[threadId].pop();
+  //strcpy(parallelFcn, "nonpfor,0,0,0");
   pollpfor();
 }
 
@@ -157,7 +166,7 @@ inline void par_do(Lf left, Rf right, bool) {
 template <typename F>
 __attribute__((noinline))
 void parallel_for_recurse(size_t start, size_t end, F f, long granularity, bool conservative) {
-  __builtin_uli_lazyd_inst((void*)updateState, (void*)(updateState), end-start, granularity, delegate_work);
+  __builtin_uli_lazyd_inst((void*)updateState, (void*)nullptr, end-start, granularity, delegate_work);
  tail_recurse:
    if ((end - start) <= static_cast<size_t>(granularity)) {
      for (size_t i=start; i < end; i++) f(i);
@@ -170,6 +179,7 @@ void parallel_for_recurse(size_t start, size_t end, F f, long granularity, bool 
      goto tail_recurse;
    }
    cilk_sync;
+   //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
  }
 
 template <typename F>
@@ -186,7 +196,7 @@ __attribute__((noinline))
 void parallel_for_seq(size_t start, size_t end, F f,
 		       long granularity,
 		       bool conservative) {
-  __builtin_uli_lazyd_inst((void*)updateState, (void*)(updateState), end-start, granularity, delegate_work);
+  __builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
   size_t len = end - start;
   size_t len_g = len/granularity;
   nTaskAdd(len_g);
@@ -206,12 +216,13 @@ void parallel_for_seq(size_t start, size_t end, F f,
       f(i);
     }
   }
+  __builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
 }
 
 template <typename F>
 __attribute__((noinline))
 void parallel_for_recurse_seq(size_t start, size_t end, F f, long granularity, bool conservative, long threshold) {
-  __builtin_uli_lazyd_inst((void*)updateState, (void*)(updateState), end-start, granularity, delegate_work);
+  __builtin_uli_lazyd_inst((void*)updateState, (void*)nullptr, end-start, granularity, delegate_work);
  tail_recurse:
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
@@ -226,12 +237,13 @@ void parallel_for_recurse_seq(size_t start, size_t end, F f, long granularity, b
     goto tail_recurse;
   }
   cilk_sync;
+  //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)nullptr, end-start, granularity, delegate_work);
 }
 
 template <typename F>
 __attribute__((noinline))
 void parallel_for_recurse_seq2(size_t start, size_t end, F f, long granularity, bool conservative, long threshold) {
-  __builtin_uli_lazyd_inst((void*)updateState, (void*)(updateState), end-start, granularity, delegate_work);
+  __builtin_uli_lazyd_inst((void*)updateState, (void*)nullptr, end-start, granularity, delegate_work);
  tail_recurse:
   if ((end - start) <= static_cast<size_t>(threshold)) {
     parallel_for_seq(start, end, f, granularity, true);
@@ -243,6 +255,7 @@ void parallel_for_recurse_seq2(size_t start, size_t end, F f, long granularity, 
     goto tail_recurse;
   }
   cilk_sync;
+  //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)nullptr, end-start, granularity, delegate_work);
 }
 
 
@@ -301,6 +314,7 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
     push_workmsg((void**)parallelCtx, targetTable[threadId][1]);
   }
 
+  __builtin_uli_lazyd_inst((void*)updateState, (void*)2, static_range, granularity, delegate_work);
 #if defined(DELEGATEPRC)
   parallel_for_recurse(start, start+static_range, f, granularity, true);
 #else
@@ -311,6 +325,7 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
     parallel_for_recurse(start, start+static_range, f, granularity, true);
   }
 #endif
+  __builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, static_range, granularity, delegate_work);
 
   if(resumeCtx[17] > (void*)1) {
     __builtin_multiret_call(2, 1, (void*)&dummyfcn, (void*)resumeCtx, &&sync_pre_resume_parent_static, &&sync_pre_resume_parent_static);
@@ -321,8 +336,9 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
   return;
 
   det_cont_static: {
-    __builtin_uli_lazyd_inst((void*)updateState, nullptr, end-start, granularity, delegate_work);
+    __builtin_uli_lazyd_inst((void*)updateState, (void*)2, static_range, granularity, delegate_work);
     parallel_for_static_wrapper(start, end, f, granularity, static_range, nWorkers, parallelCtx);
+    __builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, static_range, granularity, delegate_work);
     resume2scheduler((void**)resumeCtx, get_stacklet_ctx()[18]);
   }
   return;
@@ -331,18 +347,17 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
 #endif
 
 template <typename F>
-inline
+  //inline
+__attribute__((noinline))
 void parallel_for(size_t start, size_t end, F f,
                          long granularity,
                          bool ) {
-
-    //__builtin_uli_lazyd_inst((void*)updateState, nullptr, end-start, granularity, delegate_work);
-  if(initDone)
-    __builtin_uli_lazyd_inst((void*)updateState, (void*)updateState, end-start, granularity, delegate_work);
+  //__builtin_uli_lazyd_inst((void*)updateState, (void*)updateState, end-start, granularity, delegate_work);
 #if defined(OPENCILKDEFAULT)
   // Default
   if (granularity == 0) {
     //delegate_work++;
+    // How to capture the
     cilk_for(size_t i=start; i<end; i++) f(i);
     //delegate_work--;
   } else if ((end - start) <= static_cast<size_t>(granularity)) {
@@ -460,6 +475,7 @@ void parallel_for(size_t start, size_t end, F f,
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
+    __builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
     long thresholdprl = 0;
     size_t len = end-start;
 #ifdef NOOPT
@@ -474,10 +490,12 @@ void parallel_for(size_t start, size_t end, F f,
       thresholdprl = smallGrainSize;
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
     }
-    if(len == 0)
+    if(len == 0){
+      __builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
       return;
-
+    }
     parallel_for_recurse_seq(start, end, f, granularity, true, thresholdprl);
+    __builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
   }
 
 #elif defined(DELEGATEPRC)
@@ -485,6 +503,7 @@ void parallel_for(size_t start, size_t end, F f,
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
+    __builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
     size_t len = end-start;
 #ifdef NOOPT
     #pragma message (" DELEGATEPRC NOOPT_ENABLED ")
@@ -498,8 +517,10 @@ void parallel_for(size_t start, size_t end, F f,
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
     }
 
-    if(len == 0)
+    if(len == 0){
+      __builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
       return;
+    }
 
     if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
       delegate_work++;
@@ -510,6 +531,7 @@ void parallel_for(size_t start, size_t end, F f,
       parallel_for_recurse(start, end, f, granularity, true);
       delegate_work--;
     }
+    __builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
   }
 
 #elif defined(DELEGATEPRCPRL)
@@ -517,7 +539,7 @@ void parallel_for(size_t start, size_t end, F f,
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
-
+    __builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
     size_t len = end-start;
 #ifdef NOOPT
     #pragma message (" DELEGATEPRCPRL NOOPT_ENABLED ")
@@ -566,15 +588,8 @@ void parallel_for(size_t start, size_t end, F f,
 #endif
       delegate_work--;
     }
+    __builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
   }
-
-
-  if(delegate_work == 0) {
-    //__builtin_uli_lazyd_inst((void*)revertToIdle, nullptr, end-start, granularity, delegate_work);
-    //strcpy(parallelFcn, "serial");
-    revertToIdle();
-  }
-
 #endif
 }
 
