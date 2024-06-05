@@ -38,10 +38,12 @@ int timeDedup(sequence<sequence<char>> const &In, int rounds, char* outFile) {
   sequence<T> A = parseElements<T>(In.cut(1, In.size()));
   size_t n = A.size();
   sequence<T> R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = dedup(A);},
        [] () {});
+  instrumentTimeLoopOnly = false;
   if (outFile != NULL) writeSequenceToFile(R, outFile);
   return 1;
 }

@@ -38,12 +38,14 @@ int timeSort(sequence<parlay::chars> const &In, Less less, int rounds, bool perm
   size_t n = A.size();
   if (permute) A = parlay::random_shuffle(A);
   sequence<T> B;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 2.0,
 	    [&] () {if constexpr(INPLACE) B = A;},
 	    [&] () {
 	      if constexpr(INPLACE) compSort(B, less);
 	      else B = compSort(A, less);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) writeSequenceToFile(B, outFile);
   return 0;

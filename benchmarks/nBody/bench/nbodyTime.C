@@ -40,11 +40,12 @@ void timeNBody(parlay::sequence<point> const &pts, int rounds, char* outFile) {
   auto pp = parlay::map(pts, [] (point p) -> particle {return particle(p, 1.0);});
   parlay::sequence<particle*> p = parlay::tabulate(pts.size(), [&] (size_t i) -> particle* {
       return &pp[i];});
-
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 0.0, //1.0,
 	    [&] () {},
 	    [&] () {nbody(p);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
 
   auto O = parlay::map(p, [] (particle* p) {

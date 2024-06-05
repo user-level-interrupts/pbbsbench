@@ -36,10 +36,12 @@ void timeMatching(edges E, int rounds, char* outFile) {
   size_t m = E.nonZeros;
   size_t n = max(E.numCols,E.numRows);
   parlay::sequence<edgeId> edgeIds;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
 	    [&] () {edgeIds.clear();},
 	    [&] () {edgeIds = maximalMatching(E);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
 
   if (outFile != NULL) 

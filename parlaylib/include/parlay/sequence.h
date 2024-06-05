@@ -105,6 +105,18 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
   // creates a copy of s
   sequence(const sequence_type& s) : sequence_base_type(s.storage) {}
 
+  /** DEBUG: simulate copy constructor as regular member function; copy ctor 
+   * cause call path contention, which is bad for prr analysis
+   * The copy ctor above performs the following
+   * call explicit constructor of sequence_base_type (defined at sequence_base.h:635)
+   * since it doesn't make sense to call ctor in a regular member function, I 
+   * decide to simulate what it does, i.e. call copy constructor of storage_impl 
+   * struct defined at sequence_base.h:119
+  */
+  void copy_from(const sequence_type& s) {
+    this->storage.copy_from(s.storage);
+  }
+
   // moves rv
   sequence(sequence_type&& rv) noexcept : sequence_base_type(std::move(rv.storage)) {}
 

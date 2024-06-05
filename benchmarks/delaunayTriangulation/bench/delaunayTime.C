@@ -36,13 +36,19 @@ using namespace benchIO;
 // *************************************************************
 
 void timeDelaunay(parlay::sequence<point> &pts, int rounds, char* outFile) {
-  triangles<point> R;
-  time_loop(rounds, 1.0,
-	    [&] () {R.P.clear(); R.T.clear();},
-	    [&] () {R = delaunay(pts);},
-	    [&] () {});
-  cout << endl;
-  if (outFile != NULL) writeTrianglesToFile(R, outFile);
+    triangles<point> R;
+    #ifdef INSTRUMENT
+    instrumentTimeLoopOnly = true;
+    #endif
+    time_loop(rounds, 1.0,
+            [&] () {R.P.clear(); R.T.clear();},
+            [&] () {R = delaunay(pts);},
+            [&] () {});
+    #ifdef INSTRUMENT
+    instrumentTimeLoopOnly = false;
+    #endif
+    cout << endl;
+    if (outFile != NULL) writeTrianglesToFile(R, outFile);
 }
 
 int main(int argc, char* argv[]) {

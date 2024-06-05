@@ -131,6 +131,23 @@ struct alignas(uint64_t) sequence_base {
       }
     }
 
+    /** DBEUG: mimic copy constructor as regular member function to diverge EF call paths from DAC ones */
+    void copy_from(const storage_impl& other) {
+        // TODO: call copy constructor of base class T_allocator_type explicitly
+        if (other.is_small()) {
+            std::memcpy(static_cast<void*>(std::addressof(_data)), static_cast<const void*>(std::addressof(other._data)),
+                        sizeof(_data));
+        } else {
+            auto n = other.size();
+            initialize_capacity(n);
+            auto buffer = data();
+            auto other_buffer = other.data();
+                parallel_for(
+                0, n, [&](size_t i) { initialize_explicit(buffer + i, other_buffer[i]); }, copy_granularity(n));
+            set_size(n);
+        }
+    }
+
     // Move constructor
     storage_impl(storage_impl&& other) noexcept { move_from(std::move(other)); }
 

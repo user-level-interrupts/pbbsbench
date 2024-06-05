@@ -63,10 +63,16 @@ void report_correct(row result, row labels) {
 void timeClassify(features const &Train, rows const &Test, row const &labels,
 		  int rounds, bool verbose, char* outFile) {
   row result;
-  time_loop(rounds, 2.0,
+  #ifdef BUILTIN
+  instrumentTimeLoopOnly = true;
+  #endif
+  time_loop(rounds, 0.0, // 2.0,
 	    [&] () {},
 	    [&] () {result = classify(Train, Test, verbose);},
 	    [&] () {});
+  #ifdef BUILTIN
+  instrumentTimeLoopOnly = false;
+  #endif
   cout << endl;
 
   auto x = parlay::filter(result, [] (long i) {return (i > 9) || (i < 0);});

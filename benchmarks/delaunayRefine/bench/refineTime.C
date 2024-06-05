@@ -35,10 +35,12 @@ using namespace benchIO;
 void timeRefine(triangles<point> &Tri, int rounds, char* outFile) {
   parlay::internal::timer t;
   triangles<point> R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
 	    [&] () {R.P.clear(); R.T.clear();},
 	    [&] () {R = refine(Tri);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) writeTrianglesToFile(R, outFile);
 }

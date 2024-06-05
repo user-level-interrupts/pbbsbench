@@ -33,10 +33,12 @@ using namespace benchIO;
 
 void timeST(edgeArray<vertexId> In, int rounds, char* outFile) {
   parlay::sequence<edgeId> Out;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
 	    [&] () {Out.clear();},
 	    [&] () {Out = st(In);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) writeIntSeqToFile(Out, outFile);
 }

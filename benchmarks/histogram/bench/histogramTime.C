@@ -36,10 +36,12 @@ void timeHistogram(sequence<uint> In, int rounds, uint buckets, bool verbose,
 		   char* outFile) {
   size_t n = In.size();
   sequence<uint> R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = histogram(In, buckets);},
        [] () {});
+  instrumentTimeLoopOnly = false;
   if (outFile != NULL) writeSequenceToFile(R, outFile);
 }
 

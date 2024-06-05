@@ -1,0 +1,17 @@
+{
+  "NumBoth": 246,
+  "NumDefinitelyDAC": 16,
+  "NumDefinitelyEF": 218,
+  "NumFn": 485,
+  "NumFuncPtrAsArg": 0,
+  "NumPFor": 113,
+  "NumPForBoth": 48,
+  "NumPForDefinitelyDAC": 2,
+  "NumPForDefinitelyEF": 63,
+  "NumPForTopLevel": 113,
+  "NumPForTopLevelBoth": 48,
+  "NumPForTopLevelDefinitelyDAC": 2,
+  "NumPForTopLevelDefinitelyEF": 63,
+  "NumPForUntouched": 0,
+  "NumUntouched": 5
+}

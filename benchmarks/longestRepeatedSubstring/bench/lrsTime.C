@@ -40,11 +40,13 @@ void timeLongestRepeatedSubstring(pstring const &s, int rounds, bool verbose, ch
   size_t n = s.size();
   auto ss = parlay::map(s, [] (char c) {return (unsigned char) c;});
   result_type R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 2.0,
 	    [&] () {},
 	    [&] () {R = lrs(ss);},
 	    [&] () {}
 	    );
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) {
     auto [len, loc1, loc2] = R;

@@ -35,10 +35,12 @@ void timeIntegerSort(sequence<sequence<char>> In, int rounds, int bits, char* ou
   auto in_vals = parseElements<T>(In.cut(1, In.size()));
   size_t n = in_vals.size();
   sequence<T> R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = int_sort(make_slice(in_vals.data(),in_vals.data()+n), bits);},
        [] () {});
+  instrumentTimeLoopOnly = false;
   if (outFile != NULL) writeSequenceToFile(R, outFile);
 }
 

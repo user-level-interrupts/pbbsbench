@@ -35,10 +35,12 @@ using namespace benchIO;
 void timeRayCast(triangles<point> T, parlay::sequence<ray<point>> rays, 
 		 int rounds, char* outFile) {
   parlay::sequence<index_t> R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 2.0,
 	    [&] () {R.clear();},
 	    [&] () {R = rayCast(T, rays, false);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) writeIntSeqToFile(R, outFile);
 }

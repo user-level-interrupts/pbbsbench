@@ -37,10 +37,12 @@ using point = point2d<coord>;
 
 void timeHull(parlay::sequence<point> const &P, int rounds, char const *outFile) {
   parlay::sequence<indexT> I;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
 	    [&] () {I.clear();},
 	    [&] () {I = hull(P);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) writeIntSeqToFile(I, outFile);
 }

@@ -40,10 +40,12 @@ void timeSuffixArray(parlay::sequence<char> const &s, int rounds, char* outFile)
   size_t n = s.size();
   auto ss = parlay::tabulate(n, [&] (size_t i) -> uchar {return (uchar) s[i];});
   parlay::sequence<indexT> R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = suffixArray(ss);},
        [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) writeSequenceToFile(R, outFile);
 }

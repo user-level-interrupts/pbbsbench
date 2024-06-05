@@ -64,10 +64,12 @@ void timeNeighbors(parlay::sequence<point> &pts, int k, int rounds, char* outFil
       return &vv[i];});
 
   // run once for warmup
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
 	    [&] () {},
 	    [&] () {ANN<maxK>(v, k);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
 
   if (outFile != NULL) {
     int m = n * k;

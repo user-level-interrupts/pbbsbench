@@ -34,10 +34,12 @@ using namespace benchIO;
 
 void timeMST(wghEdgeArray<vertexId,edgeWeight> &In, int rounds, char* outFile) {
   parlay::sequence<edgeId> Out;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
 	    [&] () {Out.clear();},
 	    [&] () {Out = mst(In);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) writeIntSeqToFile(Out, outFile);
 }

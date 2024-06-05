@@ -38,10 +38,12 @@ void timeWordCounts(charseq const &s, charseq const &start,
 		    int rounds, bool cold, bool verbose, char* outFile) {
   size_t n = s.size();
   charseq R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, cold ? 0.0 : 2.0,
        [&] () {R.clear();},
        [&] () {R = build_index(s, start, verbose);},
        [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) parlay::chars_to_file(R, outFile);
 }

@@ -38,10 +38,12 @@ using namespace benchIO;
 auto timeBW(ucharseq const &s, int rounds, char* outFile) {
   size_t n = s.size();
   ucharseq R;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = bw_decode(s);},
        [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) 
     parlay::chars_to_file(parlay::map(R, [] (uchar x) {return (char) x;}), outFile);

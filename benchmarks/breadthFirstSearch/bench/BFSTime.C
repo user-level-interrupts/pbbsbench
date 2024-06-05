@@ -35,10 +35,12 @@ using namespace benchIO;
 
 void timeBFS(Graph const &G, long source, int rounds, bool verbose, char* outFile) {
   sequence<vertexId> parents;
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
 	    [&] () {parents.clear();},
 	    [&] () {parents = BFS(source, G, verbose);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   if (verbose) {
     size_t visited = parlay::reduce(parlay::delayed_map(parents, [&] (auto p) -> size_t {

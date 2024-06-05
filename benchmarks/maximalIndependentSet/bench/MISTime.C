@@ -34,10 +34,12 @@ using namespace benchIO;
 
 void timeMIS(Graph const &G, int rounds, char* outFile) {
   parlay::sequence<char> flags = maximalIndependentSet(G);
+  instrumentTimeLoopOnly = true;
   time_loop(rounds, 1.0,
 	    [&] () {flags.clear();},
 	    [&] () {flags = maximalIndependentSet(G);},
 	    [&] () {});
+  instrumentTimeLoopOnly = false;
   cout << endl;
   
   auto F = parlay::tabulate(G.n, [&] (size_t i) -> int {return flags[i];});
