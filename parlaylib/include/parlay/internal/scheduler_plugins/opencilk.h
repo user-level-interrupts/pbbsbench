@@ -304,19 +304,19 @@ inline void parallel_for(size_t start, size_t end, F f, long granularity, bool c
     } else {
         size_t len = end-start;
         /** ORIGINAL: */
-        // if(granularity == 0) {
-        //     long oriGran = granularity;
-        //     size_t eightNworkers = 8*num_workers();
-        //     const long longGrainSize = MAXGRAINSIZE;
-        //     const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
-        //     granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-        // }
+        if(granularity == 0) {
+            long oriGran = granularity;
+            size_t eightNworkers = 8*num_workers();
+            const long longGrainSize = MAXGRAINSIZE;
+            const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+            granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+        }
         /** DEBUG: uniform granularity */
-        long oriGran = granularity;
-        size_t eightNworkers = 8*num_workers();
-        const long longGrainSize = MAXGRAINSIZE;
-        const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
-        granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+        // long oriGran = granularity;
+        // size_t eightNworkers = 8*num_workers();
+        // const long longGrainSize = MAXGRAINSIZE;
+        // const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+        // granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
 
         if(len == 0)
             return;
