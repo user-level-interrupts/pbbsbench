@@ -292,7 +292,7 @@ void incrementally_add_points(sequence<vertex_t*> v, vertex_t* start) {
     rounds++;
   }
 
-  //cout << "n=" << n << "  Total retries=" << failed
+  //cout << "n=" << n << "  Total retries=" << num_failed
   //     << "  Total rounds=" << rounds << endl;
 }
 

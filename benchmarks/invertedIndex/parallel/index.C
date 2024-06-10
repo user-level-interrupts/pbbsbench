@@ -58,6 +58,7 @@ charseq build_index(charseq const &s, charseq const &doc_start,
 	else if (c >= 97 && c < 123) return c;  // already lower
 	else return 0;});                       // all other
 
+    // Source of overhead, better in DL compared to DC
     // generate tokens (i.e., contiguous regions of non-zero characters)
     auto tokens = parlay::tokens(str, [] (char c) {return c == 0;});
 

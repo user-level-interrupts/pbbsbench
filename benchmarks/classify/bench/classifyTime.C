@@ -81,7 +81,7 @@ void timeClassify(features const &Train, rows const &Test, row const &labels,
 #ifdef STATS_OVER_TIME
   initworkers_env();
   initperworkers_sync(0,1);
-  time_loop(rounds, 2.0,
+  time_loop(rounds, 0.0,
 	    [&] () {},
 	    [&] () {result = classify(Train, Test, verbose);},
 	    [&] () {});
@@ -103,7 +103,7 @@ void timeClassify(features const &Train, rows const &Test, row const &labels,
 auto read_row(string filename) {
   auto is_item = [] (char c) -> bool { return c == ',';};
   auto str = parlay::chars_from_file(filename);
-  return parlay::map(parlay::tokens(str, is_item), 
+  return parlay::map(parlay::tokens(str, is_item),
 		     [] (auto s) -> value {return parlay::chars_to_int(s);});
 }
 
@@ -126,7 +126,7 @@ auto read_data(string filename) {
 	  }
 	  return v;};
       return parlay::map_tokens(line, to_int, is_item);};
-  
+
   return std::pair(types, parlay::map_tokens(rest, process_line, is_line));
 }
 

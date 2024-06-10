@@ -61,9 +61,13 @@ struct MISstep {
 };
 
 parlay::sequence<char> maximalIndependentSet(Graph const &GS) {
+  timer t("MIS", false);
   size_t n = GS.n;
   parlay::sequence<char> Flags(n, (char) 0);
+  t.next("sequence");
   MISstep mis(Flags, GS);
+  t.next("mis");
   pbbs::speculative_for<vertexId>(mis, 0, n, 20);
+  t.next("pfor");
   return Flags;
 }

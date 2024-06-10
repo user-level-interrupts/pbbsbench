@@ -86,7 +86,7 @@ struct UnionFindStep {
 };
 
 parlay::sequence<edgeId> mst(wghEdgeArray<vertexId,edgeWeight> &E) { 
-  timer t("mst", true);
+  timer t("mst", false);
   size_t m = E.m;
   size_t n = E.n;
   size_t k = min<size_t>(5 * n / 4, m);
