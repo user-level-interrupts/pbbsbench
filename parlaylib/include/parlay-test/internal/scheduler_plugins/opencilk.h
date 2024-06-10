@@ -345,7 +345,7 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
             parallel_for_static(start, end, f, granularity, conservative);
             delegate_work--;
         } else {
-            // std::cout << "parallel_for_recurse clause !\n";
+            std::cout << "parallel_for_recurse clause ! range=" << end-start << ", granularity=" << granularity << ", nwkrs=" << num_workers() << ", initdone=" << initDone << ", threadId=" << threadId << std::endl;
             delegate_work++;
             size_t eightNworkers = (num_workers()+2)/2;
             long thres = (len)/(eightNworkers);
@@ -398,6 +398,24 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
         if(len == 0)
             return;
         
+    #ifdef NO_DAC
+        /** mask parallel_for_dac as parallel_for_dac to investigate performance benefits */
+        if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
+            delegate_work++;
+            parallel_for_static(start, end, f, granularity, true);
+            delegate_work--;
+        } else {
+            delegate_work++;
+            size_t eightNworkers = (num_workers()+2)/2;
+            long thres = (len)/(eightNworkers);
+            if(thres > granularity) {
+                parallel_for_recurse(start, end, f, granularity, true);
+            } else {
+                parallel_for_recurse(start, end, f, granularity, true);
+            }
+            delegate_work--;
+        }
+    #else 
         /** DEBUG: the else route of parallel_for since delegate_work > 0*/
         delegate_work++;
         size_t eightNworkers = (num_workers()+2)/2;
@@ -413,6 +431,7 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
         // delegate_work++;
         // parallel_for_recurse(start, end, f, granularity, true);
         // delegate_work--;
+    #endif
     }
 }
 /* == end of prr project ====== */
