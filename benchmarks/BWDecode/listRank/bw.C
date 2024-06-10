@@ -93,7 +93,8 @@ ucharseq bw_decode_(ucharseq const &s) {
 	link ln = links[pos];
 	buffer[i++] = ln.c;
 	if (i == buffer_len)
-	  throw std::runtime_error("ran out of buffer space in bw decode");
+	  //throw std::runtime_error("ran out of buffer space in bw decode");
+	  assert(false && "ran out of buffer space in bw decode");
 	pos = ln.next;
       } while (pos < n);
       auto trimmed = parlay::tabulate(i, [&] (size_t j) {return buffer[j];});
