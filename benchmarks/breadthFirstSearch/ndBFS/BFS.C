@@ -28,6 +28,19 @@
 
 using namespace std;
 
+static unsigned long long __cilkrts_getticks(void)
+{
+#if defined __i386__ || defined __x86_64
+  unsigned a, d;
+  __asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
+  return ((unsigned long long)a) | (((unsigned long long)d) << 32);
+#else
+#   warning "unimplemented cycle counter"
+  return 0;
+#endif
+}
+
+
 // **************************************************************
 //    NON DETERMINISTIC BREADTH FIRST SEARCH
 // **************************************************************
@@ -37,7 +50,8 @@ using namespace std;
 //      in the new graph are the children in the bfs tree)
 // **************************************************************
 
-std::pair<vertexId,size_t> BFS(vertexId start, Graph &G) {
+//std::pair<vertexId,size_t> BFS(vertexId start, Graph &G, bool verbose=true) {
+parlay::sequence<vertexId> BFS(vertexId start, Graph &G, bool verbose=true) {
   vertexId numVertices = G.numVertices();
   edgeId numEdges = G.m;
   vertexId maxIdx = std::numeric_limits<vertexId>::max();
@@ -49,14 +63,14 @@ std::pair<vertexId,size_t> BFS(vertexId start, Graph &G) {
   Visited[start] = true;
   size_t round = 0;
   vertexId totalVisited = 0;
-  
+
   while (Frontier.size() > 0) {
     totalVisited += Frontier.size();
     round++;
 
     parlay::parallel_for (0, Frontier.size(), [&] (size_t i) {
 	Offsets[i] = G[Frontier[i]].degree; });
-    
+
     // Find offsets to write the next frontier for each v in this frontier
     size_t nr = parlay::scan_inplace(Offsets.head(Frontier.size()));
     Offsets[Frontier.size()] = nr;
@@ -81,5 +95,6 @@ std::pair<vertexId,size_t> BFS(vertexId start, Graph &G) {
     Frontier = parlay::filter(FrontierNext, [&] (vertexId x) {return x >= 0;});
   }
 
-  return std::pair<vertexId,size_t>(totalVisited,round);
+  return Frontier;
+  //return std::pair<vertexId,size_t>(totalVisited,round);
 }

@@ -116,7 +116,6 @@ struct graph {
   size_t numEdges() const {
     if (degrees.size() == 0) return m;
     else {
-      std::cout << "hello numEdges" << std::endl;
       auto dgs = parlay::delayed_seq<intE>(n, [&] (size_t i) {
 	  return degrees[i];});
       return parlay::reduce(dgs, parlay::addm<intE>());

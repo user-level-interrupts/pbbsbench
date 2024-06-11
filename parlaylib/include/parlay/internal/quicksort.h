@@ -64,6 +64,7 @@ void insertion_sort(Iterator A, size_t n, const BinPred& f) {
   for (size_t i = 1; i < n; i++) {
     long j = i;
     while (--j >= 0 && f(A[j + 1], A[j])) {
+      //__builtin_uli_unwind_poll();
       using std::swap;
       swap(A[j + 1], A[j]);
     }
@@ -75,6 +76,7 @@ template <class Iterator, class BinPred>
 void sort5(Iterator A, size_t n, const BinPred& f) {
   size_t size = 5;
   for (size_t i = 0; i < size; ++i) {
+    //__builtin_uli_unwind_poll();
     size_t j = i + parlay::hash64(i) % (n - i);
     using std::swap;  // enable ADL.
     swap(A[i], A[j]);
@@ -120,7 +122,7 @@ std::tuple<Iterator, Iterator, bool> split3(Iterator A, size_t n, const BinPred&
   //  between L and M are between p1 and p2 inclusive
   //  between M and R are unprocessed
   while (M <= R) {
-
+    //__builtin_uli_unwind_poll();
     if (f(*M, p1)) {
       swap(*M, *L);
       L++;
@@ -149,6 +151,7 @@ std::tuple<Iterator, Iterator, bool> split3(Iterator A, size_t n, const BinPred&
 template <class Iterator, class BinPred>
 void quicksort_serial(Iterator A, size_t n, const BinPred& f) {
   while (!base_case(A, n)) {
+    //__builtin_uli_unwind_poll();
     auto [L, M, mid_eq] = split3(A, n, f);
     if (!mid_eq) quicksort_serial(L+1, M - L-1, f);
     quicksort_serial(M, A + n - M, f);
@@ -171,10 +174,11 @@ void quicksort(Iterator A, size_t n, const BinPred& f) {
     auto mid = [&, L = L, M = M]() { quicksort(L + 1, M - L - 1, f); };
     auto right = [&, M = M]() { quicksort(M, A + n - M, f); };
 
-    if (!mid_eq)
+    if (!mid_eq) {
       par_do3(left, mid, right);
-    else
+    } else {
       par_do(left, right);
+    }
   }
 }
 

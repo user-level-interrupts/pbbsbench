@@ -68,8 +68,8 @@ struct matchStep {
 parlay::sequence<edgeId> maximalMatching(edges const &E) {
   size_t n = max(E.numCols,E.numRows);
   size_t m = E.nonZeros;
-  timer t("max matching", true);
-  
+  timer t("max matching", false);
+  //t.start();
   parlay::sequence<reservation> R(n);
   parlay::sequence<bool> matched(n, false);
   matchStep mStep(E, R, matched);
@@ -79,7 +79,7 @@ parlay::sequence<edgeId> maximalMatching(edges const &E) {
   parlay::sequence<edgeId> matchingIdx =
     parlay::pack(parlay::delayed_seq<edgeId>(n, [&] (size_t i) {return R[i].get();}),
 		 parlay::tabulate(n, [&] (size_t i) -> bool {return R[i].reserved();}));
-  t.next("speculative for");
+  t.next("pack");
   cout << "number of matches = " << matchingIdx.size() << endl;
   return matchingIdx;
 }  

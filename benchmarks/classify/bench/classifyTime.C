@@ -32,6 +32,21 @@
 
 #include "classify.h"
 
+#include<set>
+#include<map>
+
+std::map<long unsigned , std::set<long unsigned>> taskLen2Gran;
+
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 using namespace std;
 using namespace benchIO;
 
@@ -63,10 +78,21 @@ void report_correct(row result, row labels) {
 void timeClassify(features const &Train, rows const &Test, row const &labels,
 		  int rounds, bool verbose, char* outFile) {
   row result;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+	    [&] () {},
+	    [&] () {result = classify(Train, Test, verbose);},
+	    [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 2.0,
 	    [&] () {},
 	    [&] () {result = classify(Train, Test, verbose);},
 	    [&] () {});
+#endif
   cout << endl;
 
   auto x = parlay::filter(result, [] (long i) {return (i > 9) || (i < 0);});
@@ -77,7 +103,7 @@ void timeClassify(features const &Train, rows const &Test, row const &labels,
 auto read_row(string filename) {
   auto is_item = [] (char c) -> bool { return c == ',';};
   auto str = parlay::chars_from_file(filename);
-  return parlay::map(parlay::tokens(str, is_item), 
+  return parlay::map(parlay::tokens(str, is_item),
 		     [] (auto s) -> value {return parlay::chars_to_int(s);});
 }
 
@@ -100,7 +126,7 @@ auto read_data(string filename) {
 	  }
 	  return v;};
       return parlay::map_tokens(line, to_int, is_item);};
-  
+
   return std::pair(types, parlay::map_tokens(rest, process_line, is_line));
 }
 

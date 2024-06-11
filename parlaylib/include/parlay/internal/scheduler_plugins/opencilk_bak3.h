@@ -45,7 +45,7 @@ extern long unsigned histIteration[8];
 extern "C"{
 extern void resume2scheduler_eager(void** ctx, int fromSync);
 //extern char sync_eagerd(void** ctx, int owner, void* savedRSP, void* currentRSP);
-extern char sync_eagerd(void** ctx, int owner, void* savedRSP, void* currentRSP, unsigned long long* startWaitCycle);
+extern char sync_eagerd(void** ctx, int owner, void* savedRSP, void* currentRSP);
 
 extern void** allocate_parallelctx2(void**ctx);
 //extern void set_joincntr(void**ctx);
@@ -77,7 +77,7 @@ extern __thread unsigned long long nTask;
 #define intregTrashed() asm volatile("# all integer saved are trashed here" : : : "rbx", "r12", "r13", "r14", "r15", "rax", "rdi", "rsi", "r8", "r9", "r10", "r11", "rdx", "rcx", "xmm0")
 
 
-#define OPENCILKDEFAULT
+//#define OPENCILKDEFAULT
 //#define OPENCILKDEFAULT_DELEGATE
 //#define PARLAYREC_NOOPT
 //#define OPENCILKDEFAULT_FINE
@@ -85,14 +85,14 @@ extern __thread unsigned long long nTask;
 //#define DELEGATEEAGERPRC
 //#define PRCPRL
 //#define DELEGATEEAGERPRL
-//#define EAGERPRC
+#define EAGERPRC
 //#define DELEGATEPRC
 //#define DELEGATEPRCPRL
 //#define DELEGATEPRL
 //#define DELEGATEPRL_NOOPT
 //#define PUREPRL
 
-#define NOOPT
+//#define NOOPT
 //#define DELEGATEWORK_ENABLED
 
 #define ss_fence() __asm__ volatile ("lock addl $0,(%rsp)")
@@ -174,7 +174,7 @@ inline void par_do(Lf left, Rf right, bool) {
    delegate_work--;
 #else
 
-#if 1
+#if 0
    cilk_spawn right();
    left();
    cilk_sync;
@@ -200,7 +200,7 @@ inline void par_do(Lf left, Rf right, bool) {
    getSP(sp2);
 
    unsigned long long startWaitCycle = 0;
-   if(!sync_eagerd((void**)readyCtx, (int)owner, (void*)readyCtx[2], sp2, &startWaitCycle)) {
+   if(!sync_eagerd((void**)readyCtx, (int)owner, (void*)readyCtx[2], sp2)) {
      __builtin_multiret_call(2, 1, (void*)&dummyfcn, (void*)readyCtx, &&sync_pre_resume_parent, &&sync_pre_resume_parent);
      resume2scheduler_eager((void**)readyCtx, 1);
    sync_pre_resume_parent: {
@@ -313,7 +313,7 @@ __attribute__((forkable))
      void* sp2;// = (void*)__builtin_read_sp();
      getSP(sp2);
      unsigned long long startWaitCycle = 0;
-     if(!sync_eagerd((void**)readyCtx, (int)owner, (void*)readyCtx[2], sp2, &startWaitCycle)) {
+     if(!sync_eagerd((void**)readyCtx, (int)owner, (void*)readyCtx[2], sp2)) {
        __builtin_multiret_call(2, 1, (void*)&dummyfcn, (void*)readyCtx, &&sync_pre_resume_parent, &&sync_pre_resume_parent);
        resume2scheduler_eager((void**)readyCtx, 1);
      sync_pre_resume_parent: {
@@ -351,7 +351,7 @@ void parallel_for_seq_eager(size_t start, size_t end, size_t midIter, F f,
    void* sp2;// = (void*)__builtin_read_sp();
    getSP(sp2);
    unsigned long long startWaitCycle = 0;
-   if(!sync_eagerd((void**)readyCtx, (int)owner, (void*)readyCtx[2], sp2, &startWaitCycle)) {
+   if(!sync_eagerd((void**)readyCtx, (int)owner, (void*)readyCtx[2], sp2)) {
      __builtin_multiret_call(2, 1, (void*)&dummyfcn, (void*)readyCtx, &&sync_pre_resume_parent, &&sync_pre_resume_parent);
      resume2scheduler_eager((void**)readyCtx, 1);
    sync_pre_resume_parent: {
@@ -1029,7 +1029,7 @@ void parallel_for(size_t start, size_t end, F f,
   } else {
 
     size_t len = end-start;
-    if(true || granularity == 0) {
+    if(granularity == 0) {
       size_t eightNworkers = 8*num_workers();
       const long longGrainSize = 2048;
       //const long longGrainSize = 8;
@@ -1039,10 +1039,10 @@ void parallel_for(size_t start, size_t end, F f,
     }
     if(len == 0)
       return;
-    delegate_work++;
+    //delegate_work++;
     //parallel_for_eager(start, end, f, granularity, true, 0, len/(num_workers()), len/(8*num_workers()));
     parallel_for_eager(start, end, f, granularity, true, 0, 0, 0);
-    delegate_work++;
+    //delegate_work++;
   }
 
 #endif

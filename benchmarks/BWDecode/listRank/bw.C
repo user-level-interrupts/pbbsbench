@@ -46,7 +46,8 @@ ucharseq bw_decode_(ucharseq const &s) {
   // sort character, returning original locations in sorted order
   auto lnks = parlay::delayed_tabulate(n, [&] (size_t i) {
      return link(i, s[i]);});
-  auto [links, c_] = parlay::internal::count_sort(parlay::make_slice(lnks), s, 256);
+  auto count_sort_result = parlay::internal::count_sort(parlay::make_slice(lnks), s, 256);
+  auto links = count_sort_result.first;
   t.next("count sort");
 
   // break lists into blocks
@@ -92,7 +93,8 @@ ucharseq bw_decode_(ucharseq const &s) {
 	link ln = links[pos];
 	buffer[i++] = ln.c;
 	if (i == buffer_len)
-	  throw std::runtime_error("ran out of buffer space in bw decode");
+	  //throw std::runtime_error("ran out of buffer space in bw decode");
+	  assert(false && "ran out of buffer space in bw decode");
 	pos = ln.next;
       } while (pos < n);
       auto trimmed = parlay::tabulate(i, [&] (size_t j) {return buffer[j];});

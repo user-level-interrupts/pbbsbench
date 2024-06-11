@@ -280,7 +280,7 @@ size_t addRefiningVertices(Slice &V, TriangleTable &TT, vertexQs& VQ) {
 #define QSIZE 20000
 
 triangles<point> refineInternal(triangles<point>& Tri) {
-  timer t("Delaunay Refine");
+  timer t("Delaunay Refine", false);
   int expandFactor = 4;
   size_t n = Tri.numPoints();
   size_t m = Tri.numTriangles();
@@ -335,10 +335,10 @@ triangles<point> refineInternal(triangles<point>& Tri) {
     auto badT = pack(badTT, flags);
     size_t numBad = badT.size();
 
-    cout << "numBad = " << numBad << endl;
+    //cout << "numBad = " << numBad << endl;
     if (numBad == 0) break;
     if (numPoints + numBad > totalVertices) {
-      cout << "ran out of vertices" << endl;
+      //cout << "ran out of vertices" << endl;
       abort();
     }
     size_t offset = numPoints - n;
@@ -366,23 +366,21 @@ triangles<point> refineInternal(triangles<point>& Tri) {
   }
 
   t.next("refinement");
-  std::cout << numTriangs << " : " << Vertices.size() << " : " << numPoints << std::endl;
+  //std::cout << numTriangs << " : " << Vertices.size() << " : " << numPoints << std::endl;
   
   // Extract Vertices for result
   auto flag = tabulate(numPoints, [&] (size_t i) -> bool {
     return (Vertices[i].badT == NULL);});
 
-  std::cout << "here" << std::endl;
   sequence<size_t> I = pack_index(flag);
   size_t n0 = I.size();
   sequence<point> rp(n0);
 
-  std::cout << "here2" << std::endl;
   parallel_for (0, n0, [&] (size_t i) {
     Vertices[I[i]].id = i;
     rp[i] = Vertices[I[i]].pt;
   });
-  cout << "total points = " << n0 << endl;
+  //cout << "total points = " << n0 << endl;
 
   // Extract Triangles for result
   I = pack_index(tabulate(numTriangs, [&] (size_t i) -> bool {
