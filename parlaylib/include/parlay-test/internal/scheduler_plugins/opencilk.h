@@ -345,7 +345,7 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
             parallel_for_static(start, end, f, granularity, conservative);
             delegate_work--;
         } else {
-            std::cout << "parallel_for_recurse clause ! range=" << end-start << ", granularity=" << granularity << ", nwkrs=" << num_workers() << ", initdone=" << initDone << ", threadId=" << threadId << std::endl;
+            // std::cout << "parallel_for_recurse clause ! range=" << end-start << ", granularity=" << granularity << ", nwkrs=" << num_workers() << ", initdone=" << initDone << ", threadId=" << threadId << std::endl;
             delegate_work++;
             size_t eightNworkers = (num_workers()+2)/2;
             long thres = (len)/(eightNworkers);
