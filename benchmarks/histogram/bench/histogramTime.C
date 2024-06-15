@@ -32,16 +32,34 @@
 using namespace std;
 using namespace benchIO;
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
 void timeHistogram(sequence<uint> In, int rounds, uint buckets, bool verbose, 
 		   char* outFile) {
   size_t n = In.size();
   sequence<uint> R;
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+       [&] () {R.clear();},
+       [&] () {R = histogram(In, buckets);},
+       [] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = histogram(In, buckets);},
        [] () {});
-  instrumentTimeLoopOnly = false;
+#endif
   if (outFile != NULL) writeSequenceToFile(R, outFile);
 }
 
@@ -51,7 +69,8 @@ int main(int argc, char* argv[]) {
   char* oFile = P.getOptionValue("-o");
   int rounds = P.getOptionIntValue("-r",1);
   int verbose = P.getOption("-v");
-  int buckets = P.getOptionIntValue("-b",0);
+  //int buckets = P.getOptionIntValue("-b",0);
+  int buckets = P.getOptionIntValue("-b",100000000);
 
   auto In = readIntSeqFromFile<uint>(iFile);
   timeHistogram(In, rounds, buckets, verbose, oFile);

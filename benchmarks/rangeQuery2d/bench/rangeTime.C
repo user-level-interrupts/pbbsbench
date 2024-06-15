@@ -39,12 +39,10 @@ void timeRange(Points const &points, Queries const& queries,
 	       int rounds, bool verbose, char* outFile) {
   cout << "start timeRange" << endl;
   long result;
-  instrumentTimeLoopOnly = true;
   time_loop(rounds, 2.0,
 	    [&] () {},
 	    [&] () {result = range(points, queries, verbose);},
 	    [&] () {});
-  instrumentTimeLoopOnly = false;
   cout << endl;
 
   cout << "total count = " << result << endl;

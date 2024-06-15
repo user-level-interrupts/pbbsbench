@@ -32,14 +32,35 @@
 using namespace std;
 using namespace benchIO;
 
+bool enableInstrument = 0;
+
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 void timeMIS(Graph const &G, int rounds, char* outFile) {
   parlay::sequence<char> flags = maximalIndependentSet(G);
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+	    [&] () {flags.clear();},
+	    [&] () {flags = maximalIndependentSet(G);},
+	    [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
 	    [&] () {flags.clear();},
 	    [&] () {flags = maximalIndependentSet(G);},
 	    [&] () {});
-  instrumentTimeLoopOnly = false;
+#endif
   cout << endl;
   
   auto F = parlay::tabulate(G.n, [&] (size_t i) -> int {return flags[i];});

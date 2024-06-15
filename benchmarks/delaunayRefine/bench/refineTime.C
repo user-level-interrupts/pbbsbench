@@ -32,15 +32,34 @@
 using namespace std;
 using namespace benchIO;
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 void timeRefine(triangles<point> &Tri, int rounds, char* outFile) {
   parlay::internal::timer t;
   triangles<point> R;
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+	    [&] () {R.P.clear(); R.T.clear();},
+	    [&] () {R = refine(Tri);},
+	    [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
 	    [&] () {R.P.clear(); R.T.clear();},
 	    [&] () {R = refine(Tri);},
 	    [&] () {});
-  instrumentTimeLoopOnly = false;
+#endif
   cout << endl;
   if (outFile != NULL) writeTrianglesToFile(R, outFile);
 }

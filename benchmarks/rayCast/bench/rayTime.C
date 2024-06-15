@@ -33,25 +33,24 @@ using namespace std;
 using namespace benchIO;
 
 void timeRayCast(triangles<point> T, parlay::sequence<ray<point>> rays, 
-		 int rounds, char* outFile) {
+		 int rounds, bool verbose, char* outFile) {
   parlay::sequence<index_t> R;
-  instrumentTimeLoopOnly = true;
   time_loop(rounds, 2.0,
 	    [&] () {R.clear();},
-	    [&] () {R = rayCast(T, rays, false);},
+	    [&] () {R = rayCast(T, rays, verbose);},
 	    [&] () {});
-  instrumentTimeLoopOnly = false;
   cout << endl;
   if (outFile != NULL) writeIntSeqToFile(R, outFile);
 }
 
 int main(int argc, char* argv[]) {
-  commandLine P(argc,argv,"[-o <outFile>] [-r <rounds>] <triangleFile> <rayFile>");
+  commandLine P(argc,argv,"[-o <outFile>] [-r <rounds>] [ -v <verbose>] <triangleFile> <rayFile>");
    pair<char*,char*> fnames = P.IOFileNames();
   char* triFile = fnames.first;
   char* rayFile = fnames.second;
   char* oFile = P.getOptionValue("-o");
   int rounds = P.getOptionIntValue("-r",1);
+  bool verbose = P.getOption("-v");
 
   // the 1 argument means that the vertices are labeled starting at 1
   triangles<point> T = readTrianglesFromFile<point>(triFile, 1);
@@ -59,5 +58,5 @@ int main(int argc, char* argv[]) {
   size_t n = Pts.size()/2;
   auto rays = parlay::tabulate(n, [&] (size_t i) -> ray<point> {
       return ray<point>(Pts[2*i], Pts[2*i+1]-point(0,0,0));});
-  timeRayCast(T, rays, rounds, oFile);
+  timeRayCast(T, rays, rounds, verbose, oFile);
 }

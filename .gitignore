@@ -25,3 +25,5 @@
 testData/sequenceData/*
 testData/geometryData/*
 testData/graphData/*
+
+**/venv/

@@ -31,15 +31,34 @@
 using namespace std;
 using namespace benchIO;
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 void timeST(edgeArray<vertexId> In, int rounds, char* outFile) {
   parlay::sequence<edgeId> Out;
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+	    [&] () {Out.clear();},
+	    [&] () {Out = st(In);},
+	    [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
 	    [&] () {Out.clear();},
 	    [&] () {Out = st(In);},
 	    [&] () {});
-  instrumentTimeLoopOnly = false;
   cout << endl;
+#endif
   if (outFile != NULL) writeIntSeqToFile(Out, outFile);
 }
     

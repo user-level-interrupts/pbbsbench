@@ -33,19 +33,43 @@ using namespace benchIO;
 
 using parlay::sequence;
 
+#include<set>
+#include<map>
+
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 template <typename T>
 int timeDedup(sequence<sequence<char>> const &In, int rounds, char* outFile) {
   sequence<T> A = parseElements<T>(In.cut(1, In.size()));
   size_t n = A.size();
   sequence<T> R;
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  dedup(A);
+
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+       [&] () {R.clear();},
+       [&] () {R = dedup(A);},
+       [] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = dedup(A);},
        [] () {});
-  instrumentTimeLoopOnly = false;
+#endif
   if (outFile != NULL) writeSequenceToFile(R, outFile);
-  return 1;
+  return 0;
 }
 
 int main(int argc, char* argv[]) {

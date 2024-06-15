@@ -35,15 +35,34 @@
 using namespace std;
 using namespace benchIO;
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 auto timeBW(ucharseq const &s, int rounds, char* outFile) {
   size_t n = s.size();
   ucharseq R;
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+       [&] () {R.clear();},
+       [&] () {R = bw_decode(s);},
+       [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = bw_decode(s);},
        [&] () {});
-  instrumentTimeLoopOnly = false;
+#endif
   cout << endl;
   if (outFile != NULL) 
     parlay::chars_to_file(parlay::map(R, [] (uchar x) {return (char) x;}), outFile);

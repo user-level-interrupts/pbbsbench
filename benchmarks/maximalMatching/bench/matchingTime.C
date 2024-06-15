@@ -29,19 +29,43 @@
 #include "common/graphIO.h"
 #include "common/parse_command_line.h"
 #include "matching.h"
+
+#include<set>
+#include<map>
+
 using namespace std;
 using namespace benchIO;
+
+std::map<long unsigned , std::set<long unsigned>> taskLen2Gran;
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
 
 void timeMatching(edges E, int rounds, char* outFile) {
   size_t m = E.nonZeros;
   size_t n = max(E.numCols,E.numRows);
   parlay::sequence<edgeId> edgeIds;
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+	    [&] () {edgeIds.clear();},
+	    [&] () {edgeIds = maximalMatching(E);},
+	    [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
 	    [&] () {edgeIds.clear();},
 	    [&] () {edgeIds = maximalMatching(E);},
 	    [&] () {});
-  instrumentTimeLoopOnly = false;
+#endif
   cout << endl;
 
   if (outFile != NULL) 

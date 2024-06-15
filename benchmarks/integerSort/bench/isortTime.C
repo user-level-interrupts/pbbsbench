@@ -30,17 +30,35 @@
 using namespace std;
 using namespace benchIO;
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
 template <class T>
 void timeIntegerSort(sequence<sequence<char>> In, int rounds, int bits, char* outFile) {
   auto in_vals = parseElements<T>(In.cut(1, In.size()));
   size_t n = in_vals.size();
   sequence<T> R;
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+       [&] () {R.clear();},
+       [&] () {R = int_sort(make_slice(in_vals.data(),in_vals.data()+n), bits);},
+       [] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = int_sort(make_slice(in_vals.data(),in_vals.data()+n), bits);},
        [] () {});
-  instrumentTimeLoopOnly = false;
+#endif
   if (outFile != NULL) writeSequenceToFile(R, outFile);
 }
 
@@ -49,17 +67,17 @@ int main(int argc, char* argv[]) {
   char* iFile = P.getArgument(0);
   char* oFile = P.getOptionValue("-o");
   int rounds = P.getOptionIntValue("-r",1);
-  int bits = P.getOptionIntValue("-b",0);
+  int bits = P.getOptionIntValue("-b",27);
 
   auto In = get_tokens(iFile);
   elementType in_type = elementTypeFromHeader(In[0]);
   cout << "bits = " << bits << endl;
 
   switch (in_type) {
-  case intType: 
+  case intType:
     timeIntegerSort<uint>(In, rounds, bits, oFile);
     break;
-  case intPairT: 
+  case intPairT:
     timeIntegerSort<uintPair>(In, rounds, bits, oFile);
     break;
   default:

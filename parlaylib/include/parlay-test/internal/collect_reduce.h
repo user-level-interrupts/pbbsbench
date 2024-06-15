@@ -111,10 +111,12 @@ struct get_bucket {
     // insert sample into hash table with one less than the
     // count of how many times appears (since it starts with -1)
     for (size_t i = 0; i < num_samples; i++) {
+      //__builtin_uli_unwind_poll();
       const auto& a = A[hash64(i) % n];
       const auto& s = hasheq.get_key(a);
       size_t idx = hasheq.hash(s) & table_mask;
       while (1) {
+	//__builtin_uli_unwind_poll();
         if (hash_table_count[idx].second == -1) {
           hash_table_count[idx] = std::make_pair(s, 0);
           break;
@@ -131,6 +133,7 @@ struct get_bucket {
     heavy_hitters = 0;
     hash_table = sequence<KI>(table_size, std::make_pair(key_type(), -1));
     for (size_t i = 0; i < table_size; i++) {
+      //__builtin_uli_unwind_poll();
       if (hash_table_count[i].second + 2 > copy_cutoff) {
         key_type key = hash_table_count[i].first;
         size_t idx = hasheq.hash(key) & table_mask;
@@ -473,8 +476,10 @@ auto seq_collect_reduce_sparse(Slice A, Helper const &helper) {
     const auto& aj = A[j];
     const auto& key = helper.get_key(aj);
     size_t k = ((size_t) helper.hash(key)) % table_size;
-    while (flags[k] && !helper.equal(helper.get_key(table[k]), key))
+    while (flags[k] && !helper.equal(helper.get_key(table[k]), key)) {
+      //__builtin_uli_unwind_poll();
       k = (k + 1 == table_size) ? 0 : k + 1;
+    }
     if (flags[k]) {
       helper.update(table[k], A[j]);
       // if relocating input need to destruct key

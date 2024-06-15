@@ -31,6 +31,16 @@
 using namespace std;
 using namespace benchIO;
 
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 template <typename T, typename Less>
 int timeSort(sequence<parlay::chars> const &In, Less less, int rounds, bool permute, char* outFile) {
   sequence<T> A = parseElements<T>(In.cut(1, In.size()));
@@ -38,15 +48,26 @@ int timeSort(sequence<parlay::chars> const &In, Less less, int rounds, bool perm
   size_t n = A.size();
   if (permute) A = parlay::random_shuffle(A);
   sequence<T> B;
-  instrumentTimeLoopOnly = true;
+#ifdef STATS_OVER_TIME
+  initworkers_env();
+  initperworkers_sync(0,1);
+  time_loop(rounds, 0.0,
+	    [&] () {if constexpr(INPLACE) B = A;},
+	    [&] () {
+	      if constexpr(INPLACE) compSort(B, less);
+	      else B = compSort(A, less);},
+	    [&] () {});
+  deinitperworkers_sync(0,1);
+  deinitworkers_env();
+#else
   time_loop(rounds, 2.0,
 	    [&] () {if constexpr(INPLACE) B = A;},
 	    [&] () {
 	      if constexpr(INPLACE) compSort(B, less);
 	      else B = compSort(A, less);},
 	    [&] () {});
-  instrumentTimeLoopOnly = false;
   cout << endl;
+#endif
   if (outFile != NULL) writeSequenceToFile(B, outFile);
   return 0;
 }
