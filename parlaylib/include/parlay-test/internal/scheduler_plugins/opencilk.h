@@ -401,196 +401,398 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
 
 /* == part of prr project ====================================== */
 template <typename F>
-inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, bool conservative) 
+inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, bool ) 
 {   
-    // /** DEBUG: parallel_for_ef timer */
-    // auto start = std::chrono::high_resolution_clock::now();
-    
-    // instrumentation
-    #ifdef ASSERT
-    assert(delegate_work == 0 && "parallel_for_dac should only be called in sequential region!");
-    __builtin_uli_lazyd_perf((void *)lazydProfilingPerf, 1, end-start, granularity, delegate_work);
-    #endif
-    if ((end - start) <= static_cast<size_t>(granularity)) {
-        for (size_t i=start; i < end; i++) f(i);
-    } else {
-        size_t len = end-start;
-        /** ORIGINAL: */
-        if(granularity == 0) {
-            long oriGran = granularity;
-            size_t eightNworkers = 8*num_workers();
-            const long longGrainSize = MAXGRAINSIZE;
-            const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
-            granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-        }
-        /** DEBUG: uniform granularity */
-        // long oriGran = granularity;
-        // size_t eightNworkers = 8*num_workers();
-        // const long longGrainSize = MAXGRAINSIZE;
-        // const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
-        // granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-        
-        if(len == 0)
-            return;
+  
+  using std::cout;
+  using std::endl;
 
-        /** DEBUG: IF version */
-    #ifdef IF_VERSION
-        if (end-start > num_workers() && end-start > granularity && initDone == 1 && threadId == 0) {
-            // std::cout << "parallel_for_static clause !\n";
-            delegate_work++;
-            parallel_for_static(start, end, f, granularity, conservative);
-            delegate_work--;
-        } else {
-            // std::cout << "parallel_for_recurse clause ! range=" << end-start << ", granularity=" << granularity << ", nwkrs=" << num_workers() << ", initdone=" << initDone << ", threadId=" << threadId << std::endl;
-            delegate_work++;
-            size_t eightNworkers = (num_workers()+2)/2;
-            long thres = (len)/(eightNworkers);
-            if(thres > granularity) {
-                parallel_for_recurse(start, end, f, granularity, true);
-            } else {
-                parallel_for_recurse(start, end, f, granularity, true);
-            }
-            delegate_work--;
-        }
-    #else
-        /** DEBUG: NO-IF version */
-        // assert(end-start > num_workers() && end-start > granularity && "parallel_for_ef failed num_workers test");
-        // assert(initDone == 1 && delegate_work == 0 && threadId == 0 && "parallel_for_ef callsites doesn't satisfy sequential constraint!");
-        delegate_work++;
-        parallel_for_static(start, end, f, granularity, conservative);
-        delegate_work--;
-    #endif
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t len = end-start;
+#ifdef NOOPT
+    #pragma message (" DELEGATEPRL NOOPT_ENABLED ")
+    granularity=0;
+#endif
+    if(granularity == 0) {
+      long oriGran = granularity;
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+
+      if ((end - start) <= static_cast<size_t>(granularity)) {
+        for (size_t i=start; i < end; i++) f(i);
+        return;
+      }
+
     }
+
+    if(len == 0){
+      return;
+    }
+
+#ifdef NOEF
+    /** NOEF: mask parallel_for_ef as parallel_for with DELEGATEPRL macro for controlled experiment */
+    //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
+    if(delegate_work == 0 && initDone == 1 && threadId == 0) {
+      delegate_work++;
+      parallel_for_static(start, end, f, granularity, true);
+      delegate_work--;
+    } else {
+      delegate_work++;
+      //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
+      parallel_for_seq(start, end, f, granularity, end-start, true);
+      //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
+      delegate_work--;
+    }
+#else 
+    if (initDone != 1 || threadId != 0) {
+        stdout << "bad case of parallel_for_ef!" << endl;
+    }
+    delegate_work++;
+    parallel_for_static(start, end, f, granularity, true);
+    delegate_work--;
+#endif 
+  }
 }
 
 template <typename F>
-inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bool conservative) 
+inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bool ) 
 {
-    // instrumentation
-    #ifdef ASSERT
-    assert(delegate_work > 0 && "parallel_for_dac should only be called in parallel region!");
-    __builtin_uli_lazyd_perf((void *)lazydProfilingPerf, 2, end-start, granularity, delegate_work);
-    #endif
-
-    if ((end - start) <= static_cast<size_t>(granularity)) {
-        for (size_t i=start; i < end; i++) f(i);
-    } else {
-        size_t len = end-start;
-        /** ORIGINAL: */
-        if(granularity == 0) {
-            long oriGran = granularity;
-            size_t eightNworkers = 8*num_workers();
-            const long longGrainSize = MAXGRAINSIZE;
-            const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
-            granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-        }
-        /** DEBUG: uniform granularity */
-        // long oriGran = granularity;
-        // size_t eightNworkers = 8*num_workers();
-        // const long longGrainSize = MAXGRAINSIZE;
-        // const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
-        // granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-
-        if(len == 0)
-            return;
-        
-    #ifdef NO_DAC
-        /** mask parallel_for_dac as parallel_for_dac to investigate performance benefits */
-        if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
-            delegate_work++;
-            parallel_for_static(start, end, f, granularity, true);
-            delegate_work--;
-        } else {
-            delegate_work++;
-            size_t eightNworkers = (num_workers()+2)/2;
-            long thres = (len)/(eightNworkers);
-            if(thres > granularity) {
-                parallel_for_recurse(start, end, f, granularity, true);
-            } else {
-                parallel_for_recurse(start, end, f, granularity, true);
-            }
-            delegate_work--;
-        }
-    #else 
-        /** DEBUG: the else route of parallel_for since delegate_work > 0*/
-        delegate_work++;
-        size_t eightNworkers = (num_workers()+2)/2;
-        long thres = (len)/(eightNworkers);
-        if(thres > granularity) {
-            parallel_for_recurse(start, end, f, granularity, true);
-        } else {
-            parallel_for_recurse(start, end, f, granularity, true);
-        }
-        delegate_work--;
-
-        /** ORIGINAL: */
-        // delegate_work++;
-        // parallel_for_recurse(start, end, f, granularity, true);
-        // delegate_work--;
-    #endif
-    }
-}
-/* == end of prr project ====== */
-
-template <typename F> // inline // __attribute__((noinline))
-inline void parallel_for(size_t start, size_t end, F f, long granularity, bool conservative) {
-#ifdef RUNTIME // only ran after confidence in analysis results
-    #ifdef ASSERT
-    __builtin_uli_lazyd_perf((void *)lazydProfilingPerf, 0, end-start, granularity, delegate_work);
-    #endif 
-
-    if ((end - start) <= static_cast<size_t>(granularity)) {
-        for (size_t i=start; i < end; i++) f(i);
-    } else {
-        size_t len = end-start;
-        /** ORIGINAL: */
-        if(granularity == 0) {
-            long oriGran = granularity;
-            size_t eightNworkers = 8*num_workers();
-            const long longGrainSize = MAXGRAINSIZE;
-            const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
-            granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-        }
-        /** DEBUG: uniform granularity */
-        // long oriGran = granularity;
-        // size_t eightNworkers = 8*num_workers();
-        // const long longGrainSize = MAXGRAINSIZE;
-        // const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
-        // granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-        
-        if(len == 0)
-            return;
-
-        if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
-            delegate_work++;
-            parallel_for_static(start, end, f, granularity, true);
-            delegate_work--;
-        } else {
-            delegate_work++;
-            size_t eightNworkers = (num_workers()+2)/2;
-            long thres = (len)/(eightNworkers);
-            if(thres > granularity) {
-                parallel_for_recurse(start, end, f, granularity, true);
-            } else {
-                parallel_for_recurse(start, end, f, granularity, true);
-            }
-            delegate_work--;
-        }
-    }
-#else // analysis result + runtime instrumentation
-    #if defined(BUILTIN) // Chrisma's buildin instrumentation builtin intrinsic
-    __builtin_uli_lazyd_inst((void*)lazydIntrumentLoop, nullptr, end-start, granularity, delegate_work);
-    #endif 
-    delegate_work++;
-    cilk_for(size_t i = start; i < end; i++) f(i);
-    delegate_work--;
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t len = end-start;
+#ifdef NOOPT
+    #pragma message (" DELEGATEPRL NOOPT_ENABLED ")
+    granularity=0;
 #endif
+    if(granularity == 0) {
+      long oriGran = granularity;
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
 
+      if ((end - start) <= static_cast<size_t>(granularity)) {
+        for (size_t i=start; i < end; i++) f(i);
+        return;
+      }
+
+    }
+
+    if(len == 0){
+      return;
+    }
+#ifdef NODAC
+    /** NODAC: mask parallel_for_dac as parallel_for with DELEGATEPRL macro for controlled experiment */
+    //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
+    if(delegate_work == 0 && initDone == 1 && threadId == 0) {
+      delegate_work++;
+      parallel_for_static(start, end, f, granularity, true);
+      delegate_work--;
+    } else {
+      delegate_work++;
+      //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
+      parallel_for_seq(start, end, f, granularity, end-start, true);
+      //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
+      delegate_work--;
+    }
+#else 
+    /** DAC: compiler predicts delegate_work == 0 */
+    delegate_work++;
+    parallel_for_seq(start, end, f, granularity, end-start, true);
+    delegate_work--;
+#endif 
+  }
 }
 
-/**
-* == end of LazydStrategy experiment ======================================
-*/
+template <typename F>
+inline
+  //__attribute__((noinline))
+void parallel_for(size_t start, size_t end, F f,
+                         long granularity,
+                         bool ) {
+#if defined(OPENCILKDEFAULT)
+  // Default
+  if (granularity == 0) {
+    //delegate_work++;
+    // How to capture the
+    cilk_for(size_t i=start; i<end; i++) f(i);
+    //delegate_work--;
+  } else if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+#ifdef NOOPT
+    #pragma message (" OPENCILK NOOPT_ENABLED ")
+    cilk_for(size_t i=start; i<end; i++) f(i);
+#else
+    //delegate_work++;
+    size_t n = end-start;
+    size_t mid = (start + (9*(n+1))/16);
+    cilk_spawn parallel_for(start, mid, f, granularity, true);
+    parallel_for(mid, end, f, granularity, true);
+    cilk_sync;
+    //delegate_work--;
+#endif
+  }
+
+#elif defined(OPENCILKDEFAULT_FINE)
+
+  // Default
+  if (granularity == 0) {
+    size_t len = end-start;
+    const long longGrainSize = MAXGRAINSIZE;
+    size_t eightNworkers = 8*num_workers();
+    long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+    granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+
+    switch(granularity) {
+    case 1:
+#pragma cilk grainsize 1
+      cilk_for(size_t i=start; i<end; i++) f(i);
+      return;
+    case 2:
+#pragma cilk grainsize 2
+      cilk_for(size_t i=start; i<end; i++) f(i);
+      return;
+    case 3:
+#pragma cilk grainsize 3
+      cilk_for(size_t i=start; i<end; i++) f(i);
+      return;
+    case 4:
+#pragma cilk grainsize 4
+      cilk_for(size_t i=start; i<end; i++) f(i);
+      return;
+    case 5:
+#pragma cilk grainsize 5
+      cilk_for(size_t i=start; i<end; i++) f(i);
+      return;
+    case 6:
+#pragma cilk grainsize 6
+      cilk_for(size_t i=start; i<end; i++) f(i);
+      return;
+    case 7:
+#pragma cilk grainsize 7
+      cilk_for(size_t i=start; i<end; i++) f(i);
+      return;
+    case 8:
+    default:
+#pragma cilk grainsize 8
+      cilk_for(size_t i=start; i<end; i++) f(i);
+      return;
+    }
+
+  } else if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t n = end-start;
+    size_t mid = (start + (9*(n+1))/16);
+    cilk_spawn parallel_for(start, mid, f, granularity, true);
+    parallel_for(mid, end, f, granularity, true);
+    cilk_sync;
+  }
+
+#elif defined(PRC)
+
+  if (granularity == 0) {
+    size_t len = end-start;
+    const long longGrainSize = MAXGRAINSIZE;
+    size_t eightNworkers = 8*num_workers();
+    long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+    granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+    parallel_for_recurse(start, end, f, granularity, true);
+  } else if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t n = end-start;
+    size_t mid = (start + (9*(n+1))/16);
+    cilk_spawn parallel_for(start, mid, f, granularity, true);
+    parallel_for(mid, end, f, granularity, true);
+    cilk_sync;
+  }
+
+#elif defined(PRL)
+
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t len = end-start;
+    if(granularity == 0) {
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+    }
+    if(len == 0)
+      return;
+
+    parallel_for_seq(start, end, f, granularity, true);
+  }
+
+#elif defined(PRCPRL)
+
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    long thresholdprl = 0;
+    size_t len = end-start;
+#ifdef NOOPT
+    #pragma message (" PRCPRL NOOPT_ENABLED ")
+    granularity=0;
+#endif
+    if(granularity == 0) {
+      size_t len = end-start;
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      thresholdprl = smallGrainSize;
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+    }
+    if(len == 0){
+      return;
+    }
+    parallel_for_recurse_seq(start, end, f, granularity, true, thresholdprl);
+  }
+
+#elif defined(DELEGATEPRC)
+
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t len = end-start;
+#ifdef NOOPT
+    #pragma message (" DELEGATEPRC NOOPT_ENABLED ")
+    granularity=0;
+#endif
+    if(granularity == 0) {
+      long oriGran = granularity;
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+
+      if ((end - start) <= static_cast<size_t>(granularity)) {
+	for (size_t i=start; i < end; i++) f(i);
+	return;
+      }
+    }
+
+    if(len == 0){
+      return;
+    }
+
+    //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
+    if(delegate_work == 0 && initDone == 1 && threadId == 0) {
+      delegate_work++;
+      parallel_for_static(start, end, f, granularity, true);
+      delegate_work--;
+    } else {
+      delegate_work++;
+      //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
+      parallel_for_recurse(start, end, f, granularity, end-start, true);
+      //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
+      delegate_work--;
+    }
+  }
+
+#elif defined(DELEGATEPRL)
+
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t len = end-start;
+#ifdef NOOPT
+    #pragma message (" DELEGATEPRL NOOPT_ENABLED ")
+    granularity=0;
+#endif
+    if(granularity == 0) {
+      long oriGran = granularity;
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+
+      if ((end - start) <= static_cast<size_t>(granularity)) {
+	for (size_t i=start; i < end; i++) f(i);
+	return;
+      }
+
+    }
+
+    if(len == 0){
+      return;
+    }
+
+    //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
+    if(delegate_work == 0 && initDone == 1 && threadId == 0) {
+      delegate_work++;
+      parallel_for_static(start, end, f, granularity, true);
+      delegate_work--;
+    } else {
+      delegate_work++;
+      //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
+      parallel_for_seq(start, end, f, granularity, end-start, true);
+      //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
+      delegate_work--;
+    }
+  }
+
+#elif defined(DELEGATEPRCPRL)
+
+  if ((end - start) <= static_cast<size_t>(granularity)) {
+    for (size_t i=start; i < end; i++) f(i);
+  } else {
+    size_t len = end-start;
+#ifdef NOOPT
+    #pragma message (" DELEGATEPRCPRL NOOPT_ENABLED ")
+    granularity=0;
+#endif
+    if(granularity == 0) {
+      long oriGran = granularity;
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
+
+      if ((end - start) <= static_cast<size_t>(granularity)) {
+	for (size_t i=start; i < end; i++) f(i);
+	return;
+      }
+    }
+
+    if(delegate_work == 0 && initDone == 1 && threadId == 0) {
+    //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
+      delegate_work++;
+      parallel_for_static(start, end, f, granularity, true);
+      delegate_work--;
+    } else {
+      delegate_work++;
+      //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
+#if 1
+      size_t eightNworkers = (num_workers()+2)/2;
+      long thres = (len)/(eightNworkers);
+      if(thres > granularity) {
+        //parallel_for_recurse(start, end, f, granularity, end-start, true);
+        parallel_for_recurse_seq2(start, end, f, granularity, end-start, true, thres);
+      } else {
+        parallel_for_recurse(start, end, f, granularity, end-start, true);
+      }
+#else
+      size_t eightNworkers = 8*num_workers();
+      const long longGrainSize = MAXGRAINSIZE;
+      const long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
+      long thresholdprl = 0;
+      parallel_for_recurse_seq(start, end, f, granularity, end-start, true, thresholdprl);
+#endif
+      //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
+      delegate_work--;
+    }
+  }
+#endif
+}
 
 
 } // namespace parlay
