@@ -403,9 +403,6 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
 template <typename F>
 inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, bool ) 
 {   
-  
-  using std::cout;
-  using std::endl;
 
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
