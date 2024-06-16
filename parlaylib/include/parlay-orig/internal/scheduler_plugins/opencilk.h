@@ -75,7 +75,6 @@ static void updateState(const char* pforName, size_t tripCount, long grainsize, 
   // run pollpfor
   pollpfor();
 }
-<<<<<<< HEAD
 
 //static void revertToIdle(const char* pforName, size_t tripCount, long grainsize, int depth) {
 static void revertToIdle(const char* pforName, size_t tripCount, long grainsize, int depth) {
@@ -89,21 +88,6 @@ static void revertToIdle(const char* pforName, size_t tripCount, long grainsize,
   pollpfor();
 }
 
-=======
-
-//static void revertToIdle(const char* pforName, size_t tripCount, long grainsize, int depth) {
-static void revertToIdle(const char* pforName, size_t tripCount, long grainsize, int depth) {
-  if(!initDone && !notDone[0])
-    return;
-
-  // Update Key
-  revert_statsobj(threadId);
-
-  // run pollpfor
-  pollpfor();
-}
-
->>>>>>> master
 }
 
 #define getSP(sp) asm volatile("#getsp\n\tmovq %%rsp,%[Var]" : [Var] "=r" (sp))

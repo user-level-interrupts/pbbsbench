@@ -41,25 +41,25 @@ CCFLAGS = -mcx16 -O3 -std=c++17 -DNDEBUG $(SCHEDULERFLAGS) $(NOOPTFLAGS) $(GRAIN
 CLFLAGS = -ldl $(JEMALLOC)
 
 OMPFLAGS = -DPARLAY_OPENMP -fopenmp
-CILKFLAGS = -DPARLAY_OPENCILK -fcilkplus --gcc-toolchain=/afs/ece/project/seth_group/pakha/GCC-12.2.0
+CILKFLAGS = -DPARLAY_OPENCILK -fcilkplus --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 # New compiler
-OPENCILKFLAGS = -DPARLAY_OPENCILK -fopencilk --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/pakha/GCC-12.2.0
+OPENCILKFLAGS = -DPARLAY_OPENCILK -fopencilk --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
-NOPOLLFLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -mllvm -lazy-disable-unwind-polling2=true -fpfor-spawn-strategy=2- --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/pakha/GCC-12.2.0
+NOPOLLFLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -mllvm -lazy-disable-unwind-polling2=true -fpfor-spawn-strategy=2- --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
-POLL0FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=1 -mllvm -enable-lazydinst=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/pakha/GCC-12.2.0
+POLL0FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=1 -mllvm -enable-lazydinst=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 # Debug: Stats / pfor
-#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -ggdb -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -mllvm -enable-lazydinst=true -mllvm -print-lambdacost=false  -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/pakha/GCC-12.2.0
+#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -ggdb -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -mllvm -enable-lazydinst=true -mllvm -print-lambdacost=false  -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 # Debug: Stats over time
-#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -ggdb -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -mllvm -enable-lazydinst=false -mllvm -print-lambdacost=false  -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=true -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/pakha/GCC-12.2.0
+#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -ggdb -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -mllvm -enable-lazydinst=false -mllvm -print-lambdacost=false  -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=true -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
-POLL2FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/pakha/GCC-12.2.0
+POLL2FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 # Debug: Stats over time
-#POLL2FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/pakha/GCC-12.2.0
+#POLL2FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../opencilk/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 PBBFLAGS = -DHOMEGROWN -pthread
 SEQFLAGS=-DPARLAY_SEQUENTIAL
@@ -69,48 +69,48 @@ NONSERIALELISIONFLAGS= -DPARLAY_OPENCILK -ftapir=serial --opencilk-resource-dir=
 ifdef OPENMP
 CC = g++-12.2.0
 CFLAGS = $(OMPFLAGS) $(CCFLAGS)
-LFLAGS = $(OMPFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+LFLAGS = $(OMPFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 
 else ifdef CILK
-CC=/afs/ece/project/seth_group/pakha/uli/src/compiler/build/bin/clang++
+CC=/afs/ece/project/seth_group/ziqiliu/uli/src/compiler/build/bin/clang++
 CFLAGS = $(CILKFLAGS) $(CCFLAGS)
-LFLAGS = -fcilkplus -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64 -lpthread
+LFLAGS = -fcilkplus -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64 -lpthread
 
 else ifdef OPENCILK
 CC = clang++
-#CC = /afs/ece/project/seth_group/pakha/opencilk/opencilk-project/build/bin/clang++
+#CC = /afs/ece/project/seth_group/ziqiliu/opencilk/opencilk-project/build/bin/clang++
 CFLAGS = $(OPENCILKFLAGS) $(CCFLAGS)
-LFLAGS = $(OPENCILKFLAGS) $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+LFLAGS = $(OPENCILKFLAGS) $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 
 else ifdef POLL0
 CC = clang++
 CFLAGS =  $(POLL0FLAGS) $(CCFLAGS)
-LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 
 else ifdef POLL2
 CC = clang++
 CFLAGS =  $(POLL2FLAGS) $(CCFLAGS)
-LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 
 else ifdef SEQUENTIAL
 CC = clang++
 CFLAGS =  $(SEQFLAGS) $(CCFLAGS)
-LFLAGS =  $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+LFLAGS =  $(CLFLAGS) -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 
 else ifdef NONSERIALELISION
 CC = clang++
 CFLAGS =  $(NONSERIALELISIONFLAGS) $(CCFLAGS)
-#LFLAGS =  -fcilkplus $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
-LFLAGS = $(OPENCILKFLAGS) $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+#LFLAGS =  -fcilkplus $(CLFLAGS) -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
+LFLAGS = $(OPENCILKFLAGS) $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 
 else ifdef NOPOLL
 CC = clang++
 CFLAGS =  $(NOPOLLFLAGS) $(CCFLAGS)
-LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+LFLAGS =  -fforkd=lazy -ftapir=serial $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 
 else
 CC = g++-12.2.0
 CFLAGS = $(PBBFLAGS) $(CCFLAGS)
-LFLAGS = $(PBBFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+LFLAGS = $(PBBFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 endif
 
