@@ -329,6 +329,7 @@ void parallel_for_static_wrapper(size_t start, size_t end, F f, long granularity
 #endif
 }
 
+#pragma message "parallel_for_static enabled!"
 template <typename F>
 __attribute__((noinline))
 __attribute__((no_unwind_path))
@@ -396,7 +397,8 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
   }
   return;
  }
-
+#else 
+#pragma message "parallel_for_static not enabled!"
 #endif
 
 /* == part of prr project ====================================== */
@@ -446,7 +448,7 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
     }
 #else 
     if (initDone != 1 || threadId != 0) {
-        stdout << "bad case of parallel_for_ef!" << endl;
+        std::cout << "bad case of parallel_for_ef!" << std::endl;
     }
     delegate_work++;
     parallel_for_static(start, end, f, granularity, true);
@@ -696,7 +698,7 @@ void parallel_for(size_t start, size_t end, F f,
   }
 
 #elif defined(DELEGATEPRL)
-
+  #pragma message "parallel_for DELEGATEPRL enabled!"
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
@@ -713,8 +715,8 @@ void parallel_for(size_t start, size_t end, F f,
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
 
       if ((end - start) <= static_cast<size_t>(granularity)) {
-	for (size_t i=start; i < end; i++) f(i);
-	return;
+	    for (size_t i=start; i < end; i++) f(i);
+	    return;
       }
 
     }
@@ -726,6 +728,7 @@ void parallel_for(size_t start, size_t end, F f,
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
       delegate_work++;
+      #pragma message "parallel_for_static used in parallel_for!"
       parallel_for_static(start, end, f, granularity, true);
       delegate_work--;
     } else {

@@ -44,27 +44,27 @@ OMPFLAGS = -DPARLAY_OPENMP -fopenmp
 CILKFLAGS = -DPARLAY_OPENCILK -fcilkplus --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 # New compiler
-OPENCILKFLAGS = -DPARLAY_OPENCILK -fopencilk --opencilk-resource-dir=/afs/ece.cmu.edu/project/seth_group/ziqiliu/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
+OPENCILKFLAGS = -DPARLAY_OPENCILK -fopencilk --opencilk-resource-dir=../../../../cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
-NOPOLLFLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -mllvm -lazy-disable-unwind-polling2=true -fpfor-spawn-strategy=2- --opencilk-resource-dir=/afs/ece.cmu.edu/project/seth_group/ziqiliu/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
+NOPOLLFLAGS = -DPARLAY_OPENCILK -fforkd=lazy -ftapir=serial -mllvm -lazy-poll-lowering=nop -mllvm -lazy-disable-unwind-polling=true -mllvm -lazy-disable-unwind-polling2=true -fpfor-spawn-strategy=2- --opencilk-resource-dir=../../../../cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
-POLL0FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=1 -mllvm -enable-lazydinst=false --opencilk-resource-dir=/afs/ece.cmu.edu/project/seth_group/ziqiliu/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
+POLL0FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=1 -mllvm -enable-lazydinst=false --opencilk-resource-dir=../../../../cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 # Debug: Stats / pfor
-#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -ggdb -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -mllvm -enable-lazydinst=true -mllvm -print-lambdacost=false  -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=/afs/ece.cmu.edu/project/seth_group/ziqiliu/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
+#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -ggdb -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -mllvm -enable-lazydinst=true -mllvm -print-lambdacost=false  -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 # Debug: Stats over time
-#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -ggdb -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -mllvm -enable-lazydinst=false -mllvm -print-lambdacost=false  -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=true -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=/afs/ece.cmu.edu/project/seth_group/ziqiliu/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
+#POLL0FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -ggdb -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -mllvm -enable-lazydinst=false -mllvm -print-lambdacost=false  -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=true -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
-POLL2FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 --opencilk-resource-dir=/afs/ece.cmu.edu/project/seth_group/ziqiliu/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
+POLL2FLAGS = -DPARLAY_OPENCILK -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 --opencilk-resource-dir=../../../../cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 # Debug: Stats over time
-#POLL2FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=/afs/ece.cmu.edu/project/seth_group/ziqiliu/cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
+#POLL2FLAGS = -DPARLAY_OPENCILK -DSTATS_OVER_TIME -mllvm -noinline-tasks=true -mllvm -experimental-debug-variable-locations=false -mllvm -disable-parallelepilog-insidepfor=true -fforkd=lazy -ftapir=serial -fpfor-spawn-strategy=2 -mllvm -lazy-enable-proper-polling=2 -mllvm -lazy-enable-main-instrumentation=false -mllvm -enable-poll-epoch=false -mllvm -lazy-disable-unwind-polling=false --opencilk-resource-dir=../../../../cheetah/build/ --gcc-toolchain=/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0
 
 PBBFLAGS = -DHOMEGROWN -pthread
 SEQFLAGS=-DPARLAY_SEQUENTIAL
 
-NONSERIALELISIONFLAGS= -DPARLAY_OPENCILK -ftapir=serial --opencilk-resource-dir=/afs/ece.cmu.edu/project/seth_group/ziqiliu/cheetah/build/
+NONSERIALELISIONFLAGS= -DPARLAY_OPENCILK -ftapir=serial --opencilk-resource-dir=../../../../cheetah/build/
 
 ifdef OPENMP
 CC = g++-12.2.0
@@ -113,4 +113,3 @@ CC = g++-12.2.0
 CFLAGS = $(PBBFLAGS) $(CCFLAGS)
 LFLAGS = $(PBBFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 endif
-

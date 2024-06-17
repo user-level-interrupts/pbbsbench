@@ -9,6 +9,8 @@
 #    CFLAGS : compiler flags
 #    LFLAGS : compiler link flags
 # ********************
+PWD = $(shell pwd)
+THIS_MAKE_BENCH_LINK = $(shell readlink -f $(PWD)/common/MakeBenchLink)
 
 TIME = $(BENCH)Time
 CHECK = ../bench/$(BENCH)Check
@@ -18,9 +20,32 @@ INCLUDE =
 $(BENCH) : $(TIME).o $(OBJS) $(CHECK) testInputs
 	$(CC) -o $@ $(TIME).o $(OBJS) $(LFLAGS)
 
+### TEST-ONLY: #######################################
+$(BENCH).noef : $(TIME).noef.o $(BENCH).noef.o $(CHECK) testInputs
+	$(CC) -o $@ $(TIME).noef.o $(BENCH).noef.o $(LFLAGS)
+
+$(BENCH).nodac: $(TIME).nodac.o $(BENCH).nodac.o $(CHECK) testInputs
+	$(CC) -o $@ $(TIME).nodac.o $(BENCH).nodac.o $(LFLAGS)
+
+$(BENCH).nodac.noef: $(TIME).nodac.noef.o $(BENCH).nodac.noef.o $(CHECK) testInputs
+	$(CC) -o $@ $(TIME).nodac.noef.o $(BENCH).nodac.noef.o $(LFLAGS)
+######################################################
+
+
 # Timing Code
 $(TIME).o : ../bench/$(TIME).C 
 	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c ../bench/$(TIME).C
+
+### TEST-ONLY: ###################################
+$(TIME).noef.o : ../bench/$(TIME).C 
+	$(CC) $(CFLAGS) -DNOEF $(INCLUDE) -o $@ -c ../bench/$(TIME).C
+
+$(TIME).nodac.o : ../bench/$(TIME).C 
+	$(CC) $(CFLAGS) -DNODAC $(INCLUDE) -o $@ -c ../bench/$(TIME).C
+
+$(TIME).nodac.noef.o : ../bench/$(TIME).C 
+	$(CC) $(CFLAGS) -DNODAC -DNOEF $(INCLUDE) -o $@ -c ../bench/$(TIME).C
+##################################################
 	
 # The check code
 $(CHECK) : $(CHECK).C
@@ -30,12 +55,38 @@ $(CHECK) : $(CHECK).C
 %.o : %.C $(REQUIRE)
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
+### TEST-ONLY: ###################################
+%.noef.o : %.C $(REQUIRE)
+	$(CC) $(CFLAGS) -DNOEF $(INCLUDE) -c $< -o $@
+
+%.nodac.o : %.C $(REQUIRE)
+	$(CC) $(CFLAGS) -DNODAC $(INCLUDE) -c $< -o $@
+
+%.nodac.noef.o : %.C $(REQUIRE)
+	$(CC) $(CFLAGS) -DNODAC -DNOEF $(INCLUDE) -c $< -o $@
+##################################################
+
 # copy over the generic test code
 testInputs : ../bench/testInputs ../bench/testInputs_small
 	cp ../bench/testInputs ../bench/testInputs_small .
 
 clean :
-	rm -f $(BENCH) *.o
+	$(info Invoke clean 		in $(THIS_MAKE_BENCH_LINK))
+	rm -f $(BENCH) $(BENCH).o $(TIME).o
+
+### TEST-ONLY: #######################################
+clean_noef: 
+	$(info Invoke clean_noef 		in $(THIS_MAKE_BENCH_LINK))
+	rm -f $(BENCH).noef $(BENCH).noef.o $(TIME).noef.o
+
+clean_nodac:
+	$(info Invoke clean_nodac 		in $(THIS_MAKE_BENCH_LINK))
+	rm -f $(BENCH).nodac $(BENCH).nodac.o $(TIME).nodac.o
+
+clean_nodac_noef:
+	$(info Invoke clean_nodac_noef 	in $(THIS_MAKE_BENCH_LINK))
+	rm -f $(BENCH).nodac.noef $(BENCH).nodac.noef.o $(TIME).nodac.noef.o
+######################################################
 
 cleanall : clean
 	rm -f testInputs*; cd ../bench; make -s clean

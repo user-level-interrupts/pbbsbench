@@ -8,12 +8,7 @@ struct feature {
   int num;       // max value of feature
   row vals;      // the sequence of values for the feature
   feature(bool discrete, int num) : discrete(discrete), num(num) {}
-  /** ORIGINA: */
-  // feature(bool d, int n, row v) : discrete(d), num(n), vals(v) {} /** TODO: rewrite vals(v) to bypass default copy constructor */
-  /** DEBUG: bypass default sequence copy constructor */
-  feature(bool d, int n, row &v) : discrete(d), num(n) {
-    vals.copy_from(v);
-  }
+  feature(bool d, int n, row v) : discrete(d), num(n), vals(v) {} /** TODO: rewrite vals(v) to bypass default copy constructor */
 };
 
 using features = parlay::sequence<feature>;
