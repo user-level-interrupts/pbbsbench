@@ -9,6 +9,8 @@
 #    CFLAGS : compiler flags
 #    LFLAGS : compiler link flags
 # ********************
+PWD = $(shell pwd)
+THIS_MAKE_BENCH_LINK = $(shell readlink -f $(PWD)/common/MakeBenchLink)
 
 TIME = $(BENCH)Time
 CHECK = ../bench/$(BENCH)Check
@@ -35,7 +37,8 @@ testInputs : ../bench/testInputs ../bench/testInputs_small
 	cp ../bench/testInputs ../bench/testInputs_small .
 
 clean :
-	rm -f $(BENCH) *.o
+	$(info Invoke clean 		in $(THIS_MAKE_BENCH_LINK))
+	rm -f $(BENCH) $(BENCH).o $(TIME).o
 
 cleanall : clean
 	rm -f testInputs*; cd ../bench; make -s clean

@@ -34,9 +34,6 @@
 #include "parlay/internal/get_time.h"
 #include "classify.h"
 
-/** DBEUG: my own timer code */
-  #include <chrono> 
-
 using namespace parlay;
 using std::cout;
 using std::endl;
@@ -223,25 +220,8 @@ int classify_row(tree* T, row const&r) {
 
 row classify(features const &Train, rows const &Test, bool verbose) {
   features A = Train;
-  /** ORIGINAL: */
-  // tree* T = build_tree(A, verbose);
-  /** DEBUG: */
-  auto start1 = std::chrono::high_resolution_clock::now();
   tree* T = build_tree(A, verbose);
-  auto end1 = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> duration1 = end1 - start1;
-  std::cout << "build_tree time: " << duration1.count() << " s" << std::endl;
-
   if (true) cout << "Tree size = " << T->size << endl;
   int num_features = Test[0].size();
-  /** ORIGINAL: */
-  // return map(Test, [&] (row const& r) -> value {return classify_row(T, r);});
-
-  auto start2 = std::chrono::high_resolution_clock::now();
-  auto res = map(Test, [&] (row const& r) -> value {return classify_row(T, r);});
-  auto end2 = std::chrono::high_resolution_clock::now();
-  
-  std::chrono::duration<double> duration2 = end2 - start2;
-  std::cout << "map time: " << duration2.count() << " s" << std::endl;
-  return res;
+  return map(Test, [&] (row const& r) -> value {return classify_row(T, r);});
 }

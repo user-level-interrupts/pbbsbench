@@ -148,16 +148,14 @@ auto cond_info_continuous(feature const &a, feature const &b) {
 }
 
 // information content of s (i.e. entropy * size)
-/// DEBUG: disable dflt copy ctor to enable our substituted ones 
-double info(/** DEBUG: originally 'row s' */row &s, int num_vals) {
+double info(row s, int num_vals) {
   size_t n = s.size();
   if (n == 0) return 0.0;
-  auto x = histogram_by_index_ef(s, num_vals); 
+  auto x = histogram_by_index(s, num_vals);
   return entropy(x, n);
 }
 /** DEBUG: parallel version */
-// double info_par(row s, int num_vals) {
-double info_par(/** DEBUG: originally 'row s' */row &s, int num_vals) {
+double info_par(row s, int num_vals) {
   size_t n = s.size();
   if (n == 0) return 0.0;
   auto x = histogram_by_index(s, num_vals);
@@ -323,15 +321,7 @@ int classify_row(tree* T, row const&r) {
 
 row classify(features const &Train, rows const &Test, bool verbose) {
   features A = Train;
-  /** ORIGINAL: */
-  // tree* T = build_tree(A, verbose);
-  /** DEBUG: */
-  auto start1 = std::chrono::high_resolution_clock::now();
   tree* T = build_tree(A, verbose);
-  auto end1 = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> duration1 = end1 - start1;
-  std::cout << "build_tree time: " << duration1.count() << " s" << std::endl;
-  
   if (true) cout << "Tree size = " << T->size << endl;
   int num_features = Test[0].size();
   /** PRR: EF */return map_ef(Test, [&] (row const& r) -> value {return classify_row(T, r);});

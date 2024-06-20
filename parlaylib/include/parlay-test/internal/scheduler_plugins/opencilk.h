@@ -329,7 +329,6 @@ void parallel_for_static_wrapper(size_t start, size_t end, F f, long granularity
 #endif
 }
 
-#pragma message "parallel_for_static enabled!"
 template <typename F>
 __attribute__((noinline))
 __attribute__((no_unwind_path))
@@ -397,21 +396,18 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
   }
   return;
  }
-#else 
-#pragma message "parallel_for_static not enabled!"
 #endif
 
 /* == part of prr project ====================================== */
 template <typename F>
 inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, bool ) 
 {   
-
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
     size_t len = end-start;
 #ifdef NOOPT
-    #pragma message (" DELEGATEPRL NOOPT_ENABLED ")
+    #pragma message (" DELEGATEPRC NOOPT_ENABLED parallel_for_ef ")
     granularity=0;
 #endif
     if(granularity == 0) {
@@ -425,13 +421,11 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
         for (size_t i=start; i < end; i++) f(i);
         return;
       }
-
     }
 
     if(len == 0){
       return;
     }
-
 #ifdef NOEF
     /** NOEF: mask parallel_for_ef as parallel_for with DELEGATEPRL macro for controlled experiment */
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
@@ -442,14 +436,14 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
     } else {
       delegate_work++;
       //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
-      parallel_for_seq(start, end, f, granularity, end-start, true);
+      parallel_for_recurse(start, end, f, granularity, end-start, true);
       //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
       delegate_work--;
     }
 #else 
-    if (initDone != 1 || threadId != 0) {
-        std::cout << "bad case of parallel_for_ef!" << std::endl;
-    }
+    // if (initDone != 1 || threadId != 0) {
+    //     std::cout << "bad case of parallel_for_ef!" << std::endl;
+    // }
     delegate_work++;
     parallel_for_static(start, end, f, granularity, true);
     delegate_work--;
@@ -465,7 +459,7 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
   } else {
     size_t len = end-start;
 #ifdef NOOPT
-    #pragma message (" DELEGATEPRL NOOPT_ENABLED ")
+    #pragma message (" DELEGATEPRC NOOPT_ENABLED (parallel_for_dac) ")
     granularity=0;
 #endif
     if(granularity == 0) {
@@ -479,7 +473,6 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
         for (size_t i=start; i < end; i++) f(i);
         return;
       }
-
     }
 
     if(len == 0){
@@ -495,14 +488,14 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
     } else {
       delegate_work++;
       //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
-      parallel_for_seq(start, end, f, granularity, end-start, true);
+      parallel_for_recurse(start, end, f, granularity, end-start, true);
       //__builtin_uli_lazyd_inst((void*)revertToIdle, (void*)1, end-start, granularity, delegate_work);
       delegate_work--;
     }
 #else 
     /** DAC: compiler predicts delegate_work == 0 */
     delegate_work++;
-    parallel_for_seq(start, end, f, granularity, end-start, true);
+    parallel_for_recurse(start, end, f, granularity, end-start, true);
     delegate_work--;
 #endif 
   }
@@ -728,7 +721,6 @@ void parallel_for(size_t start, size_t end, F f,
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
       delegate_work++;
-      #pragma message "parallel_for_static used in parallel_for!"
       parallel_for_static(start, end, f, granularity, true);
       delegate_work--;
     } else {

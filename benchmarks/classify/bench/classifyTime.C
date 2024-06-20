@@ -103,7 +103,7 @@ void timeClassify(features const &Train, rows const &Test, row const &labels,
 auto read_row(string filename) {
   auto is_item = [] (char c) -> bool { return c == ',';};
   auto str = parlay::chars_from_file(filename);
-  return parlay::map(parlay::tokens(str, is_item),
+  return parlay::map(parlay::tokens(str, is_item), 
 		     [] (auto s) -> value {return parlay::chars_to_int(s);});
 }
 

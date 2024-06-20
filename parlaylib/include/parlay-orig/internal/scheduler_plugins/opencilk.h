@@ -396,8 +396,7 @@ void parallel_for_static(size_t start, size_t end, F f, long granularity, bool c
   }
   return;
  }
-#else 
-#pragma "parallel_for_static not enabled!"
+
 #endif
 
 template <typename F>
@@ -620,7 +619,6 @@ void parallel_for(size_t start, size_t end, F f,
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
       delegate_work++;
-      #pragma message "parallel_for_static used in parallel_for!"
       parallel_for_static(start, end, f, granularity, true);
       delegate_work--;
     } else {
@@ -685,10 +683,6 @@ void parallel_for(size_t start, size_t end, F f,
   }
 #endif
 }
-
-/**
-* == end of LazydStrategy experiment ======================================
-*/
 
 
 } // namespace parlay

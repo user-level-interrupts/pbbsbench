@@ -97,7 +97,6 @@ auto all_equal_par(S1 const &a) {
 
 template <typename S1>
 auto majority(S1 const &a, size_t m) {
-  // std::cout << "<< tabulate_by_index_ef:\t" << __builtin_FILE() << ":" << __builtin_LINE() << ":" << __builtin_COLUMN() << std::endl;
   auto x = /** PRR: EF */histogram_by_index_ef(a,m);
   return max_element(x) - x.begin();
 }
@@ -149,16 +148,14 @@ auto cond_info_continuous(feature const &a, feature const &b) {
 }
 
 // information content of s (i.e. entropy * size)
-/// DEBUG: disable dflt copy ctor to enable our substituted ones 
-double info(/** DEBUG: originally 'row s' */row &s, int num_vals) {
+double info(row s, int num_vals) {
   size_t n = s.size();
   if (n == 0) return 0.0;
-  auto x = histogram_by_index_ef(s, num_vals); 
+  auto x = histogram_by_index(s, num_vals);
   return entropy(x, n);
 }
 /** DEBUG: parallel version */
-// double info_par(row s, int num_vals) {
-double info_par(/** DEBUG: originally 'row s' */row &s, int num_vals) {
+double info_par(row s, int num_vals) {
   size_t n = s.size();
   if (n == 0) return 0.0;
   auto x = histogram_by_index(s, num_vals);
@@ -247,7 +244,6 @@ auto build_tree(features &A, bool verbose) {
   if (num_entries < 2 || all_equal(A[0].vals))
     return Leaf(majority_value);
   double label_info = info(A[0].vals,A[0].num);
-  // std::cout << "<< tabulate_ef:\t" << __builtin_FILE() << ":" << __builtin_LINE() << ":" << __builtin_COLUMN() << std::endl;
   auto costs = /** PRR: EF */tabulate_ef(num_features - 1, [&] (int i) {
       if (A[i+1].discrete) {
 	return std::tuple(cond_info_discrete(A[0], A[i+1]), i+1, -1);
@@ -277,19 +273,15 @@ auto build_tree(features &A, bool verbose) {
       split_on = A[best_i].vals;
     } else {
       m = 2;
-      // std::cout << "<< map_ef:\t" << __builtin_FILE() << ":" << __builtin_LINE() << ":" << __builtin_COLUMN() << std::endl;
       split_on = /** PRR: EF */map_ef(A[best_i].vals, [&] (value x) -> value {return x >= cut;});
     }
-    // std::cout << "<< map_ef:\t" << __builtin_FILE() << ":" << __builtin_LINE() << ":" << __builtin_COLUMN() << std::endl;
     features F = /** PRR: EF */map_ef(A, [&] (feature a) {return feature(a.discrete, a.num);});
     sequence<features> B(m, F);
-    // std::cout << "<< parallel_ef:\t" << __builtin_FILE() << ":" << __builtin_LINE() << ":" << __builtin_COLUMN() << std::endl;
     /** PRR: EF */parallel_for_ef (0, num_features, [&] (size_t j) {
       auto x = group_by_index(delayed_zip(split_on, A[j].vals), m);
       for (int i=0; i < m; i++) B[i][j].vals = std::move(x[i]);
     }, 1);
     //A.clear();
-    // std::cout << "<< map_ef:\t" << __builtin_FILE() << ":" << __builtin_LINE() << ":" << __builtin_COLUMN() << std::endl;
     auto children = /** PRR: EF */map_ef(B, [&] (features &a) {return /** DEBUG: */build_tree_par(a, verbose);}, 1);
     return Internal(best_i - 1, cut, majority_value, children); //-1 since first is label
   }
@@ -326,6 +318,5 @@ row classify(features const &Train, rows const &Test, bool verbose) {
 
   if (true) cout << "Tree size = " << T->size << endl;
   int num_features = Test[0].size();
-  // std::cout << "<< map_ef:\t" << __builtin_FILE() << ":" << __builtin_LINE() << ":" << __builtin_COLUMN() << std::endl;
   /** PRR: EF */return map_ef(Test, [&] (row const& r) -> value {return classify_row(T, r);});
 }
