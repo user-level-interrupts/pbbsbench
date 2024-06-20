@@ -88,10 +88,17 @@ void timeClassify(features const &Train, rows const &Test, row const &labels,
   deinitperworkers_sync(0,1);
   deinitworkers_env();
 #else
+  #ifdef BUILTIN
+  #pragma message "instrumentTimeLoopOnly set in timeClassify ref"
+  instrumentTimeLoopOnly = true;
+  #endif
   time_loop(rounds, 2.0,
 	    [&] () {},
 	    [&] () {result = classify(Train, Test, verbose);},
 	    [&] () {});
+  #ifdef BUILTIN
+  instrumentTimeLoopOnly = false;
+  #endif
 #endif
   cout << endl;
 
@@ -160,3 +167,11 @@ int main(int argc, char* argv[]) {
   features TrainFeatures = rows_to_features(types, Train);
   timeClassify(TrainFeatures, Test, labels, rounds, verbose, oFile);
 }
+
+#ifdef BUILTIN
+__attribute__((destructor))
+void pfor_count() {
+    std::cout << "pfor dynamic entry [[REF]]" << std::endl;
+    std::cout << "pfor_cnt=" << pfor_cnt << std::endl;
+}
+#endif

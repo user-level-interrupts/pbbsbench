@@ -154,7 +154,6 @@ auto build_tree(features &A, bool verbose) {
   if (num_entries < 2 || all_equal(A[0].vals))
     return Leaf(majority_value);
   double label_info = info(A[0].vals,A[0].num);
-  
   auto costs = tabulate(num_features - 1, [&] (int i) {
       if (A[i+1].discrete) {
 	return std::tuple(cond_info_discrete(A[0], A[i+1]), i+1, -1);

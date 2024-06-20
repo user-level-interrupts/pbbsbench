@@ -29,6 +29,9 @@ $(BENCH).nodac: $(TIME).nodac.o $(BENCH).nodac.o $(CHECK) testInputs
 
 $(BENCH).nodac.noef: $(TIME).nodac.noef.o $(BENCH).nodac.noef.o $(CHECK) testInputs
 	$(CC) -o $@ $(TIME).nodac.noef.o $(BENCH).nodac.noef.o $(LFLAGS)
+
+$(BENCH).instr: $(TIME).instr.o $(BENCH).instr.o $(CHECK) testInputs
+	$(CC) -o $@ $(TIME).instr.o $(BENCH).instr.o $(LFLAGS)
 ######################################################
 
 
@@ -45,6 +48,9 @@ $(TIME).nodac.o : ../bench/$(TIME).C
 
 $(TIME).nodac.noef.o : ../bench/$(TIME).C 
 	$(CC) $(CFLAGS) -DNODAC -DNOEF $(INCLUDE) -o $@ -c ../bench/$(TIME).C
+
+$(TIME).instr.o : ../bench/$(TIME).C
+	$(CC) $(CFLAGS) -DBUILTIN $(INCLUDE) -o $@ -c ../bench/$(TIME).C
 ##################################################
 	
 # The check code
@@ -64,6 +70,9 @@ $(CHECK) : $(CHECK).C
 
 %.nodac.noef.o : %.C $(REQUIRE)
 	$(CC) $(CFLAGS) -DNODAC -DNOEF $(INCLUDE) -c $< -o $@
+
+%.instr.o : %.C $(REQUIRE)
+	$(CC) $(CFLAGS) -DBUILTIN $(INCLUDE) -c $< -o $@
 ##################################################
 
 # copy over the generic test code
@@ -86,6 +95,10 @@ clean_nodac:
 clean_nodac_noef:
 	$(info Invoke clean_nodac_noef 	in $(THIS_MAKE_BENCH_LINK))
 	rm -f $(BENCH).nodac.noef $(BENCH).nodac.noef.o $(TIME).nodac.noef.o
+
+clean_instr:
+	$(info Invoke clean_instr		in $(THIS_MAKE_BENCH_LINK))
+	rm -f $(BENCH).instr $(BENCH).instr.o $(TIME).instr.o
 ######################################################
 
 cleanall : clean

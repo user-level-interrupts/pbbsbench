@@ -29,27 +29,12 @@
 #include "common/IO.h"
 #include "common/sequenceIO.h"
 #include "common/parse_command_line.h"
-#include <sys/time.h>
+
 // SA.h defines indexT, which is the type of integer used for the elements of the
 // suffix array
 #include "wc.h"
 using namespace std;
 using namespace benchIO;
-
-#include<set>
-#include<map>
-
-std::map<long unsigned , std::set<long unsigned>> taskLen2Gran;
-std::map<long unsigned , std::set<long unsigned>> taskLen2Iteration;
-
-#ifdef STATS_OVER_TIME
-extern "C"{
-  extern void initworkers_env();
-  extern void initperworkers_sync(int threadid, int setAllowWS);
-  extern void deinitperworkers_sync(int threadId, int clearNotDone);
-  extern void deinitworkers_env();
-}
-#endif
 
 void writeHistogramsToFile(parlay::sequence<result_type> const results, char* outFile) {
   auto space = parlay::to_chars(' ');
@@ -64,30 +49,16 @@ void writeHistogramsToFile(parlay::sequence<result_type> const results, char* ou
 void timeWordCounts(parlay::sequence<char> const &s, int rounds, bool verbose, char* outFile) {
   size_t n = s.size();
   parlay::sequence<result_type> R;
-
-  #ifdef BUILTIN
-  instrumentTimeLoopOnly = true;
-  #endif
-
-#ifdef STATS_OVER_TIME
-  initworkers_env();
-  initperworkers_sync(0,1);
-  time_loop(rounds, 0.0,
-       [&] () {R.clear();},
-       [&] () {R = wordCounts(s, verbose);},
-       [&] () {});
-  deinitperworkers_sync(0,1);
-  deinitworkers_env();
-#else
+//   #ifdef BUILTIN
+//   instrumentTimeLoopOnly = true;
+//   #endif
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = wordCounts(s, verbose);},
        [&] () {});
-#endif
-
-  #ifdef BUILTIN
-  instrumentTimeLoopOnly = false;
-  #endif
+//   #ifdef BUILTIN
+//   instrumentTimeLoopOnly = false;
+//   #endif
 
   cout << endl;
   if (outFile != NULL) writeHistogramsToFile(R, outFile);
@@ -101,5 +72,6 @@ int main(int argc, char* argv[]) {
   int rounds = P.getOptionIntValue("-r",1);
   //parlay::sequence<char> S = parlay::chars_from_file(iFile, true);
   parlay::sequence<char> S = parlay::to_sequence(parlay::file_map(iFile));
+  
   timeWordCounts(S, rounds, verbose, oFile);
 }

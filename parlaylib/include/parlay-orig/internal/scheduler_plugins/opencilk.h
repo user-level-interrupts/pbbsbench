@@ -43,6 +43,14 @@ extern __thread int initDone;
 extern __thread int delegate_work;
 extern __thread unsigned long long nTask;
 
+// added
+#ifdef BUILTIN
+#pragma message "BUILTIN instrumentation enabled!"
+extern __thread bool instrumentTimeLoopOnly;
+extern __thread int pfor_cnt;
+#endif
+////////
+
 extern void pollpfor();
 
 static void updateStateNoSave(const char* pforName, size_t tripCount, long grainsize, int depth){
@@ -574,6 +582,10 @@ void parallel_for(size_t start, size_t end, F f,
       return;
     }
 
+    #ifdef BUILTIN
+    #pragma message "parallel_for dynamic counter enabled!"
+    if (instrumentTimeLoopOnly) pfor_cnt++;
+    #endif
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
       delegate_work++;

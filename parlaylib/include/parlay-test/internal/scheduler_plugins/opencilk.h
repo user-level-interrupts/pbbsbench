@@ -43,6 +43,16 @@ extern __thread int initDone;
 extern __thread int delegate_work;
 extern __thread unsigned long long nTask;
 
+// added
+#ifdef BUILTIN
+#pragma message "BUILTIN instrumentation enabled!"
+extern __thread bool instrumentTimeLoopOnly;
+extern __thread int pfor_dac_cnt;
+extern __thread int pfor_ef_cnt;
+extern __thread int pfor_cnt;
+#endif
+////////
+
 extern void pollpfor();
 
 static void updateStateNoSave(const char* pforName, size_t tripCount, long grainsize, int depth){
@@ -441,6 +451,10 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
       delegate_work--;
     }
 #else 
+    #ifdef BUILTIN
+    #pragma message "parallel_for_ef dynamic counter enabled!"
+    if (instrumentTimeLoopOnly) pfor_ef_cnt++;
+    #endif
     // if (initDone != 1 || threadId != 0) {
     //     std::cout << "bad case of parallel_for_ef!" << std::endl;
     // }
@@ -493,7 +507,11 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
       delegate_work--;
     }
 #else 
-    /** DAC: compiler predicts delegate_work == 0 */
+    #ifdef BUILTIN
+    #pragma message "parallel_for_dac dynamic counter enabled!"
+    if (instrumentTimeLoopOnly) pfor_dac_cnt++;
+    #endif
+    /** DAC: compiler predicts delegate_work > 0 */
     delegate_work++;
     parallel_for_recurse(start, end, f, granularity, end-start, true);
     delegate_work--;
@@ -667,8 +685,8 @@ void parallel_for(size_t start, size_t end, F f,
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
 
       if ((end - start) <= static_cast<size_t>(granularity)) {
-	for (size_t i=start; i < end; i++) f(i);
-	return;
+        for (size_t i=start; i < end; i++) f(i);
+        return;
       }
     }
 
@@ -676,6 +694,10 @@ void parallel_for(size_t start, size_t end, F f,
       return;
     }
 
+    #ifdef BUILTIN
+    #pragma message "parallel_for dynamic counter enabled!"
+    if (instrumentTimeLoopOnly) pfor_cnt++;
+    #endif
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
       delegate_work++;

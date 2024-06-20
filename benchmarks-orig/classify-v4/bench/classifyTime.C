@@ -66,6 +66,7 @@ void timeClassify(features const &Train, rows const &Test, row const &labels,
 		  int rounds, bool verbose, char* outFile) {
   row result;
   #ifdef BUILTIN
+  #pragma message "instrumentTimeLoopOnly set in timeClassify ctrl v4"
   instrumentTimeLoopOnly = true;
   #endif
   time_loop(rounds, 0.0, // 2.0,
@@ -155,3 +156,11 @@ int main(int argc, char* argv[]) {
   features TrainFeatures = rows_to_features(types, Train);
   timeClassify(TrainFeatures, Test, labels, rounds, verbose, oFile);
 }
+
+#ifdef BUILTIN
+__attribute__((destructor))
+void pfor_count() {
+    std::cout << "pfor dynamic entry [[CTRL:v4]]" << std::endl;
+    std::cout << "pfor_cnt=" << pfor_cnt << std::endl;
+}
+#endif

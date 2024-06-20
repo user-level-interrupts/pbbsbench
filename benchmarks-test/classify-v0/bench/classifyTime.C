@@ -63,14 +63,15 @@ void report_correct(row result, row labels) {
 void timeClassify(features const &Train, rows const &Test, row const &labels,
 		  int rounds, bool verbose, char* outFile) {
   row result;
-  #ifdef ASSERT
+  #ifdef BUILTIN
+  #pragma message "instrumentTimeLoopOnly set in timeClassify test v0"
   instrumentTimeLoopOnly = true;
   #endif
   time_loop(rounds, 0.0, // 2.0,
 	    [&] () {},
 	    [&] () {result = classify(Train, Test, verbose);},
 	    [&] () {});
-  #ifdef ASSERT
+  #ifdef BUILTIN
   instrumentTimeLoopOnly = false;
   #endif
   cout << endl;
@@ -140,3 +141,13 @@ int main(int argc, char* argv[]) {
   features TrainFeatures = rows_to_features(types, Train);
   timeClassify(TrainFeatures, Test, labels, rounds, verbose, oFile);
 }
+
+#ifdef BUILTIN
+__attribute__((destructor))
+void pfor_count() {
+    std::cout << "pfor dynamic entry [[TEST:v0]]" << std::endl;
+    std::cout << "pfor_cnt=" << pfor_cnt << std::endl;
+    std::cout << "pfor_dac_cnt=" << pfor_dac_cnt << std::endl;
+    std::cout << "pfor_ef_cnt=" << pfor_ef_cnt << std::endl;
+}
+#endif
