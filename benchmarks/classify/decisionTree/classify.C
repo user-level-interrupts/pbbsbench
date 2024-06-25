@@ -70,7 +70,6 @@ tree* Internal(int i, int cut, int majority, sequence<tree*> children) {
 }
 
 // To be put into parlay
-
 template <typename S1, typename S2>
 auto delayed_zip(S1 const &a, S2 const &b) {
   return delayed_tabulate(a.size(), [&] (size_t i) {return std::pair(a[i],b[i]);});
