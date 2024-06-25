@@ -565,8 +565,8 @@ void parallel_for(size_t start, size_t end, F f,
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
 
       if ((end - start) <= static_cast<size_t>(granularity)) {
-	for (size_t i=start; i < end; i++) f(i);
-	return;
+	    for (size_t i=start; i < end; i++) f(i);
+	    return;
       }
     }
 
@@ -589,7 +589,7 @@ void parallel_for(size_t start, size_t end, F f,
   }
 
 #elif defined(DELEGATEPRL)
-
+  #pragma message "parallel_for DELEGATEPRL enabled!"
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
@@ -606,8 +606,8 @@ void parallel_for(size_t start, size_t end, F f,
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
 
       if ((end - start) <= static_cast<size_t>(granularity)) {
-	for (size_t i=start; i < end; i++) f(i);
-	return;
+	    for (size_t i=start; i < end; i++) f(i);
+	    return;
       }
 
     }
