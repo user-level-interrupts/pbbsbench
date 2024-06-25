@@ -35,6 +35,19 @@
 using namespace std;
 using namespace benchIO;
 
+#ifdef BUILTIN
+bool instrumentTimeLoopOnly = false;
+int  pfor_cnt_1 = 0;
+int  pfor_cnt_2 = 0;
+
+__attribute__((destructor))
+void pfor_count() {
+    std::cout << "\npfor dynamic entry [[CTRL:v1]]" << std::endl;
+    std::cout << "pfor_cnt_1\t= " << pfor_cnt_1 << std::endl;
+    std::cout << "pfor_cnt_2\t= " << pfor_cnt_2 << std::endl;
+}
+#endif
+
 parlay::sequence<char> comma(1, ',');
 parlay::sequence<char> newline(1, '\n');
 template <typename Seq>
@@ -67,7 +80,7 @@ void timeClassify(features const &Train, rows const &Test, row const &labels,
   #pragma message "instrumentTimeLoopOnly set in timeClassify ctrl v1"
   instrumentTimeLoopOnly = true;
   #endif
-  time_loop(rounds, 0.0, // 2.0,
+  time_loop(rounds, 2.0,
 	    [&] () {},
 	    [&] () {result = classify(Train, Test, verbose);},
 	    [&] () {});
@@ -141,11 +154,3 @@ int main(int argc, char* argv[]) {
   features TrainFeatures = rows_to_features(types, Train);
   timeClassify(TrainFeatures, Test, labels, rounds, verbose, oFile);
 }
-
-#ifdef BUILTIN
-__attribute__((destructor))
-void pfor_count() {
-    std::cout << "pfor dynamic entry [[CTRL:v1]]" << std::endl;
-    std::cout << "pfor_cnt=" << pfor_cnt << std::endl;
-}
-#endif

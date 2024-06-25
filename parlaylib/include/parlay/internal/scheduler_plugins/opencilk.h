@@ -46,8 +46,9 @@ extern __thread unsigned long long nTask;
 // added
 #ifdef BUILTIN
 #pragma message "BUILTIN instrumentation enabled!"
-extern __thread bool instrumentTimeLoopOnly;
-extern __thread int pfor_cnt;
+extern bool instrumentTimeLoopOnly;
+extern int pfor_cnt_1;
+extern int pfor_cnt_2;
 #endif
 ////////
 
@@ -573,8 +574,8 @@ void parallel_for(size_t start, size_t end, F f,
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
 
       if ((end - start) <= static_cast<size_t>(granularity)) {
-	for (size_t i=start; i < end; i++) f(i);
-	return;
+        for (size_t i=start; i < end; i++) f(i);
+        return;
       }
     }
 
@@ -582,16 +583,20 @@ void parallel_for(size_t start, size_t end, F f,
       return;
     }
 
-    #ifdef BUILTIN
-    #pragma message "parallel_for dynamic counter enabled!"
-    if (instrumentTimeLoopOnly) pfor_cnt++;
-    #endif
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
+      #ifdef BUILTIN
+      #pragma message "parallel_for dynamic counter enabled!"
+      if (instrumentTimeLoopOnly) pfor_cnt_1++;
+      #endif
       delegate_work++;
       parallel_for_static(start, end, f, granularity, true);
       delegate_work--;
     } else {
+      #ifdef BUILTIN
+      #pragma message "parallel_for dynamic counter enabled!"
+      if (instrumentTimeLoopOnly) pfor_cnt_2++;
+      #endif
       delegate_work++;
       //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
       parallel_for_recurse(start, end, f, granularity, end-start, true);
@@ -601,7 +606,7 @@ void parallel_for(size_t start, size_t end, F f,
   }
 
 #elif defined(DELEGATEPRL)
-
+  #pragma message "parallel_for DELEGATEPRL enabled!"
   if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
@@ -618,8 +623,8 @@ void parallel_for(size_t start, size_t end, F f,
       granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
 
       if ((end - start) <= static_cast<size_t>(granularity)) {
-	for (size_t i=start; i < end; i++) f(i);
-	return;
+	    for (size_t i=start; i < end; i++) f(i);
+	    return;
       }
 
     }

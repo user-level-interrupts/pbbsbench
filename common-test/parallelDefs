@@ -113,3 +113,17 @@ CC = g++-12.2.0
 CFLAGS = $(PBBFLAGS) $(CCFLAGS)
 LFLAGS = $(PBBFLAGS) $(CLFLAGS) -L/afs/ece/project/seth_group/ziqiliu/GCC-12.2.0/lib64
 endif
+
+# added
+ifdef NOEF
+	CFLAGS += -DNOEF
+endif
+
+ifdef NODAC
+	CFLAGS += -DNODAC
+endif
+
+ifdef INSTR
+	CFLAGS += -DBUILTIN
+endif
+########

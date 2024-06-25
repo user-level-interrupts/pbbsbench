@@ -20,17 +20,9 @@ INCLUDE =
 $(BENCH) : $(TIME).o $(OBJS) $(CHECK) testInputs
 	$(CC) -o $@ $(TIME).o $(OBJS) $(LFLAGS)
 
-# added: instrumenation
-$(BENCH).instr: $(TIME).instr.o $(BENCH).instr.o $(CHECK) testInputs
-	$(CC) -o $@ $(TIME).instr.o $(BENCH).instr.o $(LFLAGS)
-
 # Timing Code
 $(TIME).o : ../bench/$(TIME).C 
 	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c ../bench/$(TIME).C
-
-# added: instrumentation
-$(TIME).instr.o : ../bench/$(TIME).C
-	$(CC) $(CFLAGS) -DBUILTIN $(INCLUDE) -o $@ -c ../bench/$(TIME).C
 
 # The check code
 $(CHECK) : $(CHECK).C
@@ -40,22 +32,13 @@ $(CHECK) : $(CHECK).C
 %.o : %.C $(REQUIRE)
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
-# added: instrumentation
-%.instr.o : %.C $(REQUIRE)
-	$(CC) $(CFLAGS) -DBUILTIN $(INCLUDE) -c $< -o $@
-
 # copy over the generic test code
 testInputs : ../bench/testInputs ../bench/testInputs_small
 	cp ../bench/testInputs ../bench/testInputs_small .
 
 clean :
-	$(info Invoke clean 		in $(THIS_MAKE_BENCH_LINK))
-	rm -f $(BENCH) $(BENCH).o $(TIME).o
-
-### added
-clean_instr:
-	$(info Invoke clean_instr		in $(THIS_MAKE_BENCH_LINK))
-	rm -f $(BENCH).instr $(BENCH).instr.o $(TIME).instr.o
+	$(info clean in ${PWD})
+	rm -f $(BENCH) *.o
 	
 cleanall : clean
 	rm -f testInputs*; cd ../bench; make -s clean

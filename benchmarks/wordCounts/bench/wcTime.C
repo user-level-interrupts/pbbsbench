@@ -74,10 +74,16 @@ void timeWordCounts(parlay::sequence<char> const &s, int rounds, bool verbose, c
   deinitperworkers_sync(0,1);
   deinitworkers_env();
 #else
+  #ifdef BUILTIN
+  instrumentTimeLoopOnly = true;
+  #endif
   time_loop(rounds, 1.0,
        [&] () {R.clear();},
        [&] () {R = wordCounts(s, verbose);},
        [&] () {});
+  #ifdef BUILTIN
+  instrumentTimeLoopOnly = false;
+  #endif
 #endif
   cout << endl;
   if (outFile != NULL) writeHistogramsToFile(R, outFile);

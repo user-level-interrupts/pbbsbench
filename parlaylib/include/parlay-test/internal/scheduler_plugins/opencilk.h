@@ -46,10 +46,11 @@ extern __thread unsigned long long nTask;
 // added
 #ifdef BUILTIN
 #pragma message "BUILTIN instrumentation enabled!"
-extern __thread bool instrumentTimeLoopOnly;
-extern __thread int pfor_dac_cnt;
-extern __thread int pfor_ef_cnt;
-extern __thread int pfor_cnt;
+extern bool instrumentTimeLoopOnly;
+extern int pfor_dac_cnt;
+extern int pfor_ef_cnt;
+extern int pfor_cnt_1;
+extern int pfor_cnt_2;
 #endif
 ////////
 
@@ -436,7 +437,18 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
     if(len == 0){
       return;
     }
+
+    #ifdef BUILTIN
+    #pragma message "parallel_for_ef dynamic counter enabled!"
+    if (instrumentTimeLoopOnly) pfor_ef_cnt++;
+    #endif
+
 #ifdef NOEF
+    #ifdef BUILTIN
+    if (delegate_work > 0) {
+        std::cout << "Bad case of parallel_for_ef!" << std::endl;
+    }
+    #endif
     /** NOEF: mask parallel_for_ef as parallel_for with DELEGATEPRL macro for controlled experiment */
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
@@ -451,10 +463,6 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
       delegate_work--;
     }
 #else 
-    #ifdef BUILTIN
-    #pragma message "parallel_for_ef dynamic counter enabled!"
-    if (instrumentTimeLoopOnly) pfor_ef_cnt++;
-    #endif
     // if (initDone != 1 || threadId != 0) {
     //     std::cout << "bad case of parallel_for_ef!" << std::endl;
     // }
@@ -492,7 +500,18 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
     if(len == 0){
       return;
     }
+
+    #ifdef BUILTIN
+    #pragma message "parallel_for_dac dynamic counter enabled!"
+    if (instrumentTimeLoopOnly) pfor_dac_cnt++;
+    #endif
+    
 #ifdef NODAC
+    #ifdef BUILTIN
+    if (delegate_work > 0) {
+        std::cout << "Bad case of parallel_for_dac!" << std::endl;
+    }
+    #endif
     /** NODAC: mask parallel_for_dac as parallel_for with DELEGATEPRL macro for controlled experiment */
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
@@ -507,10 +526,6 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
       delegate_work--;
     }
 #else 
-    #ifdef BUILTIN
-    #pragma message "parallel_for_dac dynamic counter enabled!"
-    if (instrumentTimeLoopOnly) pfor_dac_cnt++;
-    #endif
     /** DAC: compiler predicts delegate_work > 0 */
     delegate_work++;
     parallel_for_recurse(start, end, f, granularity, end-start, true);
@@ -694,16 +709,20 @@ void parallel_for(size_t start, size_t end, F f,
       return;
     }
 
-    #ifdef BUILTIN
-    #pragma message "parallel_for dynamic counter enabled!"
-    if (instrumentTimeLoopOnly) pfor_cnt++;
-    #endif
     //if(end-start > num_workers() && end-start > granularity && delegate_work == 0 && initDone == 1 && threadId == 0) {
     if(delegate_work == 0 && initDone == 1 && threadId == 0) {
+      #ifdef BUILTIN
+      #pragma message "parallel_for dynamic counter enabled!"
+      if (instrumentTimeLoopOnly) pfor_cnt_1++;
+      #endif
       delegate_work++;
       parallel_for_static(start, end, f, granularity, true);
       delegate_work--;
     } else {
+      #ifdef BUILTIN
+      #pragma message "parallel_for dynamic counter enabled!"
+      if (instrumentTimeLoopOnly) pfor_cnt_2++;
+      #endif
       delegate_work++;
       //__builtin_uli_lazyd_inst((void*)updateState, (void*)2, end-start, granularity, delegate_work);
       parallel_for_recurse(start, end, f, granularity, end-start, true);
