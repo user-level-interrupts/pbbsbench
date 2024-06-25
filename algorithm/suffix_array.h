@@ -196,7 +196,8 @@ parlay::sequence<indexT> suffix_array(UCharRange const &ss) {
   // The segments keep regions that have not yet been fully sorted
   while (1) {
     if (round++ > 40)
-      throw std::runtime_error("Suffix Array: internal error, too many rounds");
+      //throw std::runtime_error("Suffix Array: internal error, too many rounds");
+      assert(false && "Suffix Array: internal error, too many rounds");
 
     auto is_seg = [&] (seg<indexT> s) {return s.length > 1;};
     // only keep segments that are longer than 1 (otherwise already sorted)
