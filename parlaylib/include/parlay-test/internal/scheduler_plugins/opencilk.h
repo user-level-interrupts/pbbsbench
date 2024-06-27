@@ -445,7 +445,7 @@ inline void parallel_for_ef(size_t start, size_t end, F f, long granularity, boo
 
 #ifdef NOEF
     #ifdef BUILTIN
-    if (delegate_work > 0) {
+    if (!(delegate_work == 0 && initDone == 1 && threadId == 0)) {
         std::cout << "Bad case of parallel_for_ef!" << std::endl;
     }
     #endif
@@ -508,7 +508,7 @@ inline void parallel_for_dac(size_t start, size_t end, F f, long granularity, bo
     
 #ifdef NODAC
     #ifdef BUILTIN
-    if (delegate_work > 0) {
+    if (delegate_work == 0 && initDone == 1 && threadId == 0) {
         std::cout << "Bad case of parallel_for_dac!" << std::endl;
     }
     #endif

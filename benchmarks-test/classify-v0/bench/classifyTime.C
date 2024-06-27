@@ -32,6 +32,21 @@
 
 #include "classify.h"
 
+#include<set>
+#include<map>
+
+std::map<long unsigned , std::set<long unsigned>> taskLen2Gran;
+
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
 using namespace std;
 using namespace benchIO;
 
@@ -46,7 +61,7 @@ __attribute__((destructor))
 void pfor_count() {
     std::cout << "\npfor dynamic entry [[TEST:v0]]" << std::endl;
     std::cout << "pfor_cnt_1\t= " << pfor_cnt_1 << std::endl;
-    std::cout << "pfor_cnt_2\t= " << pfor_cnt_1 << std::endl;
+    std::cout << "pfor_cnt_2\t= " << pfor_cnt_2 << std::endl;
     std::cout << "pfor_dac_cnt\t= " << pfor_dac_cnt << std::endl;
     std::cout << "pfor_ef_cnt\t= " << pfor_ef_cnt << std::endl;
 }
