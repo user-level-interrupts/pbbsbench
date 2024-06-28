@@ -493,7 +493,7 @@ void parallel_for(size_t start, size_t end, F f,
     size_t eightNworkers = 8*num_workers();
     long smallGrainSize = (len + eightNworkers -1 )/(eightNworkers);
     granularity = smallGrainSize > longGrainSize ? longGrainSize : smallGrainSize;
-    parallel_for_recurse(start, end, f, granularity, true);
+    parallel_for_recurse(start, end, f, granularity, len, true);
   } else if ((end - start) <= static_cast<size_t>(granularity)) {
     for (size_t i=start; i < end; i++) f(i);
   } else {
