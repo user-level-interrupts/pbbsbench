@@ -681,6 +681,13 @@ void parallel_for(size_t start, size_t end, F f,
       delegate_work--;
     }
   }
+#elif defined(ANALYSIS)
+  // marking point: InstrumentLoopPass will use this instruction for dynamic instrumentation
+  __builtin_uli_lazyd_inst((void*)lazydIntrumentLoop, nullptr, end-start, granularity, delegate_work);
+  // naive implementation of parallel_for for pforsubst 
+  delegate_work++;
+  cilk_for(size_t i = start; i < end; i++) f(i);
+  delegate_work--;
 #endif
 }
 

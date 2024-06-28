@@ -46,6 +46,9 @@ extern "C"{
 }
 #endif
 
+#ifdef ANALYSIS
+bool instrumentTimeLoopOnly = false;
+#endif
 
 using namespace std;
 using namespace benchIO;
@@ -78,6 +81,8 @@ void report_correct(row result, row labels) {
 void timeClassify(features const &Train, rows const &Test, row const &labels,
 		  int rounds, bool verbose, char* outFile) {
   row result;
+  #ifdef ANALYSIS
+  instrumentTimeLoopOnly = true;
 #ifdef STATS_OVER_TIME
   initworkers_env();
   initperworkers_sync(0,1);
@@ -93,6 +98,8 @@ void timeClassify(features const &Train, rows const &Test, row const &labels,
 	    [&] () {result = classify(Train, Test, verbose);},
 	    [&] () {});
 #endif
+  instrumentTimeLoopOnly = false;
+  #endif
   cout << endl;
 
   auto x = parlay::filter(result, [] (long i) {return (i > 9) || (i < 0);});
