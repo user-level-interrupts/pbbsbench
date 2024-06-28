@@ -28,6 +28,18 @@
 #include "common/IO.h"
 #include "common/parse_command_line.h"
 #include "wc.h"
+
+// added
+#ifdef BUILTIN
+#pragma message "BUILTIN instrumentation enabled!"
+bool instrumentTimeLoopOnly = false;
+int  pfor_cnt_1 = 0;
+int  pfor_cnt_2 = 0;
+int  pfor_ef_cnt = 0;
+int  pfor_dac_cnt = 0;
+#endif
+////////
+
 using namespace std;
 using namespace benchIO;
 

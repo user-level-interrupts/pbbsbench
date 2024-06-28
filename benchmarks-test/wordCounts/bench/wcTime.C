@@ -36,6 +36,39 @@
 using namespace std;
 using namespace benchIO;
 
+#include<set>
+#include<map>
+
+std::map<long unsigned , std::set<long unsigned>> taskLen2Gran;
+std::map<long unsigned , std::set<long unsigned>> taskLen2Iteration;
+
+#ifdef STATS_OVER_TIME
+extern "C"{
+  extern void initworkers_env();
+  extern void initperworkers_sync(int threadid, int setAllowWS);
+  extern void deinitperworkers_sync(int threadId, int clearNotDone);
+  extern void deinitworkers_env();
+}
+#endif
+
+
+#ifdef BUILTIN
+bool instrumentTimeLoopOnly = false;
+int  pfor_cnt_1 = 0;
+int  pfor_cnt_2 = 0;
+int  pfor_ef_cnt = 0;
+int  pfor_dac_cnt = 0;
+
+__attribute__((destructor))
+void pfor_count() {
+    std::cout << "\npfor dynamic entry [[TEST]]" << std::endl;
+    std::cout << "pfor_cnt_1\t= " << pfor_cnt_1 << std::endl;
+    std::cout << "pfor_cnt_2\t= " << pfor_cnt_2 << std::endl;
+    std::cout << "pfor_dac_cnt\t= " << pfor_dac_cnt << std::endl;
+    std::cout << "pfor_ef_cnt\t= " << pfor_ef_cnt << std::endl;
+}
+#endif
+
 void writeHistogramsToFile(parlay::sequence<result_type> const results, char* outFile) {
   auto space = parlay::to_chars(' ');
   auto newline = parlay::to_chars('\n');

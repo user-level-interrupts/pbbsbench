@@ -51,6 +51,20 @@ extern "C"{
 }
 #endif
 
+
+#ifdef BUILTIN
+bool instrumentTimeLoopOnly = false;
+int  pfor_cnt_1 = 0;
+int  pfor_cnt_2 = 0;
+
+__attribute__((destructor))
+void pfor_count() {
+    std::cout << "\npfor dynamic entry [[TEST]]" << std::endl;
+    std::cout << "pfor_cnt_1\t= " << pfor_cnt_1 << std::endl;
+    std::cout << "pfor_cnt_2\t= " << pfor_cnt_2 << std::endl;
+}
+#endif
+
 void writeHistogramsToFile(parlay::sequence<result_type> const results, char* outFile) {
   auto space = parlay::to_chars(' ');
   auto newline = parlay::to_chars('\n');
