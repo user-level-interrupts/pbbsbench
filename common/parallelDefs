@@ -130,7 +130,7 @@ else ifdef UIPI
 
 CC = clang++
 CFLAGS =  $(UIPIFLAGS) $(CCFLAGS)
-LFLAGS =  -fforkd=uipi -ftapir=serial $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
+LFLAGS =  -fforkd=uli -ftapir=serial $(CLFLAGS) -fuse-ld=lld  -L/afs/ece/project/seth_group/pakha/GCC-12.2.0/lib64
 
 else ifdef SIGUSR
 
